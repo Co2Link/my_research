@@ -6,6 +6,8 @@ class RL_runner(metaclass=ABCMeta):
 
         self.logger=logger
 
+        self.epi_count=0
+
     @abstractmethod
     def traj_generator(self,agent,env):
         pass

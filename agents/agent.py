@@ -48,9 +48,9 @@ class Agent(metaclass=ABCMeta):
         x = Flatten()(x)
         x = Dense(512, activation="relu", name=(name+"_dense"))(x)
 
-        output = Dense(output_num, activation='linear', name="_output")(x)
+        q = Dense(output_num, activation='linear', name="q")(x)
 
-        return Model(inputs, output)
+        return Model(inputs, q)
 
     def save_model(self, episode, file_name='model'):
         if os.path.exists(file_name + "_" + str(episode-1)+ ".h5f"):
