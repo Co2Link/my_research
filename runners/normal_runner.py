@@ -27,13 +27,14 @@ class Normal_runner(RL_runner):
             env.render()
 
             # eps-greedy
-            fraction=min(step,self.eps_step)/self.eps_step
+            fraction=min(total_step,self.eps_step)/self.eps_step
             if self.eps_start+(self.eps_end-self.eps_start)*fraction <=np.random.uniform(0,1):
                 action=agent.select_action(state)
             else:
-                action=env.observation_space.sample()
+                action=env.action_space.sample()
 
             # step
+
             state_,reward,done,_=env.step(action)
 
             # log

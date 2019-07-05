@@ -33,7 +33,7 @@ class Agent(metaclass=ABCMeta):
         model.add(Dense(10, activation="relu", name=(name+"_dense1"), input_shape=(None, input_shape)))
         model.add(Dense(10, activation="relu", name=(name+"_dense2")))
         model.add(Dense(10, activation="relu", name=(name+"_dense3")))
-        model.add(Dense(output_num, activation="linear", name=(name+"_output")))
+        model.add(Dense(output_num, activation="linear", name=(name+"q")))
 
         return model
 

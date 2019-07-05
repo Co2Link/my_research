@@ -46,7 +46,10 @@ def ddqn_main():
 
     ddqn_agent=DDQN(env,runner,LEARNUNG_RATE,GAMMA,None,1e4,32)
 
-    runner.traj_generator(ddqn_agent,env)
+    tran_gen=runner.traj_generator(ddqn_agent,env)
+
+    for i in tran_gen:
+        print(i)
 
 if __name__ == '__main__':
     ddqn_main()
