@@ -36,7 +36,7 @@ class Agent(metaclass=ABCMeta):
         model.add(Dense(output_num, activation="linear", name=(name+"q")))
 
         return model
-
+    # expect input shape of (N,H,W,C)
     def build_CNN_model(self,input_shape,output_num,name=""):
         """ build CNN network """
         inputs = Input(shape=input_shape)
@@ -62,5 +62,5 @@ class Agent(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def select_action(self,ob):
+    def select_action(self,state):
         pass

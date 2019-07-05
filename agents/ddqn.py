@@ -48,8 +48,15 @@ class DDQN(Agent):
         self.r_memory=RingBuf(size=self.memory_size)
         self.ns_memory=RingBuf(size=self.memory_size)
 
-    def select_action(self,ob):
-        a=self.eval.predict_on_batch(np.array([ob]))
+    def memorize(self,s,a,r,s_):
+        self.s_memory.append(s)
+        self.a_memory.append(a)
+        self.r_memory.append(r)
+        self.ns_memory.append(s_)
+
+    def select_action(self,state):
+        state=self.LazyFrame2array(state)
+        a=self.eval.predict_on_batch(np.array([state]))
         return np.argmax(a[0])
 
     def update_target_network(self):
@@ -58,15 +65,26 @@ class DDQN(Agent):
     def learn(self):
         index=list(np.random.choice(len(self.s_memory),self.batch_size))
 
-        s_b=[self.s_memory[i] for i in index]
-        a_b=[self.a_memory[i] for i in index]
-        r_b=[self.r_memory[i] for i in index]
-        ns_b=[self.ns_memory[i] for i in index]
+        s_batch=[self.s_memory[i] for i in index]
+        a_batch=[self.a_memory[i] for i in index]
+        r_batch=[self.r_memory[i] for i in index]
+        ns_batch=[self.ns_memory[i] for i in index]
 
-        s_b=np.array(s_b)
+        s_batch=self.LazyFrame2array(s_batch)
+        ns_batch=self.LazyFrame2array(ns_batch)
 
-        print(s_b)
-        print(s_b.shape)
+        q_eval=self.eval.predict_on_batch(s_batch)
+
+        action=self.eval.predict_on_batch(ns_batch).argmax(axis=1)
+        q_target=self.target.predict_on_batch(ns_batch)
+
+
+
+
+
+
+    def LazyFrame2array(self,LazyFrame):
+        return np.array(LazyFrame)
 
 
 

@@ -45,16 +45,16 @@ class Normal_runner(RL_runner):
             if done == False:
                 yield state,action,reward,state_
             else:
-                state_=np.zeros((state_.shape))
+                state_=np.zeros((np.array(state_).shape))
 
                 yield state_,action,reward,state_
 
+                # log
                 self.epi_count+=1
-
                 epi_step=0
-
                 episode_reward=0
 
+                # reset environment
                 state_=env.reset()
 
             state=state_

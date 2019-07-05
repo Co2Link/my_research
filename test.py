@@ -3,10 +3,15 @@ import shutil
 from utils import RingBuf
 from collections import deque
 import time
-
+import tensorflow as tf
 import numpy as np
 
-a=[1,2,3,4,2,7,2,3]
+a=np.random.randn(3,3)
 
-print(np.argmax(a))
+a[:,[0,1,2]]=1
+
+print(a)
+
+
+
 

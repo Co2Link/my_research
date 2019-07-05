@@ -25,7 +25,7 @@ GAMMA = 0.99
 
 EPS_START = 1.0
 EPS_END = 0.001
-EPS_STEP = 0.001
+EPS_STEP = 1e5
 
 MAX_MEM_LEN = 10000
 WARMUP = 1000
@@ -42,14 +42,16 @@ def ddqn_main():
 
     env=wrap_deepmind(env,frame_stack=True,scale=True)
 
-    runner=Normal_runner(100)
+    runner=Normal_runner(100,EPS_START,EPS_END,EPS_STEP)
 
     ddqn_agent=DDQN(env,runner,LEARNUNG_RATE,GAMMA,None,1e4,32)
 
     tran_gen=runner.traj_generator(ddqn_agent,env)
 
-    for i in tran_gen:
-        print(i)
+    for i in range(100):
+        s,a,r,s_=next(tran_gen)
+        ddqn_agent.memorize(s,a,r,s_)
+    ddqn_agent.learn()
 
 if __name__ == '__main__':
     ddqn_main()
