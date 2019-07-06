@@ -99,7 +99,9 @@ class DDQN(Agent):
         # print("real_action_index: \n",np.array(a_batch).reshape(-1,1).astype(int)[:3])
 
         loss = self.model.train_on_batch(s_batch, q_model_)
-        self.logger.add_loss([loss])
+
+        if self.logger is not None:
+            self.logger.add_loss([loss])
 
         return loss
 

@@ -1,10 +1,10 @@
 import argparse
-
 from gym import wrappers
-
 from agents.ddqn import DDQN
 from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
+from keras import backend as K
+import tensorflow as tf
 
 from atari_wrappers import *
 
@@ -23,31 +23,39 @@ MAX_MEM_LEN = 10000
 WARMUP = 10000
 TARGET_UPDATE = 1000
 
-RENDER=False
+RENDER = False
+LOG=False
 
 SAVE_MODEL_INTERVAL = 100
 
 ROOT_PATH = "./root"
 
+
 def ddqn_main():
-    # TensorBoard
-    logger=LogWriter(ROOT_PATH,BATCH_SIZE)
-
     # make environment
-    env=make_atari("BreakoutNoFrameskip-v4")
+    env = make_atari("BreakoutNoFrameskip-v4")
 
-    # save movies
-    env=wrappers.Monitor(env,logger.get_movie_pass(),video_callable=(lambda ep:ep%100==0),force=True)
+    # TensorBoard
+    if LOG:
 
-    env=wrap_deepmind(env,frame_stack=True,scale=True)
+        logger = LogWriter(ROOT_PATH, BATCH_SIZE)
 
-    runner=Normal_runner(EPS_START,EPS_END,EPS_STEP,logger,RENDER)
+        # save movies
+        env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
 
-    ddqn_agent=DDQN(env,LEARNUNG_RATE,GAMMA,logger,1e4,32)
+    else:
+        logger=None
 
-    runner.train(ddqn_agent,env,MAX_ITERATION,BATCH_SIZE,warmup=WARMUP,target_update_interval=TARGET_UPDATE)
+    env = wrap_deepmind(env, frame_stack=True, scale=True)
 
-    ddqn_agent.save_model(-1,"model.hdf5")
+    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER)
+
+    ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, 1e4, 32)
+
+    runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
+
+    ddqn_agent.save_model(-1, "model.hdf5")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -67,6 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gpu', type=str, default="0")
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--render', action="store_true")
+    parser.add_argument('--log', action="store_true")
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -81,5 +90,11 @@ if __name__ == '__main__':
     TARGET_UPDATE = args.target_update
     SAVE_MODEL_INTERVAL = args.save_model_interval
     ROOT_PATH = args.root_path
+    RENDER=args.render
+    LOG=args.log
+
+    # config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
+    # sess = tf.Session(config=config)
+    # K.set_session(sess)
 
     ddqn_main()

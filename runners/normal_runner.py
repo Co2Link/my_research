@@ -18,7 +18,7 @@ class Normal_runner(RL_runner):
         """ generate trajectory """
         state = env.reset()
 
-        total_step = 0
+        total_step = 0.0
 
         epi_step = 0
 
@@ -44,23 +44,26 @@ class Normal_runner(RL_runner):
             epi_step += 1
             total_step += 1
 
-            self.logger.add_reward_iter(episode_reward)
+            if self.logger is not None:
+                self.logger.add_reward_iter(episode_reward)
 
-            if done == False:
+            if not done:
                 yield state, action, reward, state_
             else:
-                state_ = np.zeros((np.array(state_).shape))
+                state_ = np.zeros(np.array(state_).shape)
 
                 yield state_, action, reward, state_
 
                 # log
-                self.logger.save_model(agent, self.episode)
+                if self.logger is not None:
+                    self.logger.save_model(agent, self.episode)
 
-                self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
-                        self.eps_start + (self.eps_end - self.eps_start) * fraction)})
-
-                # print("{} : {}, steps : {}, epsilon : {}".format(self.epi_count,episode_reward, epi_step,
-                #       self.eps_start + (self.eps_end - self.eps_start) * fraction))
+                    self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
+                            self.eps_start + (self.eps_end - self.eps_start) * fraction)})
+                else:
+                    print("{} : {}, steps : {}, epsilon : {}".format(self.episode, episode_reward, epi_step,
+                                                                     self.eps_start + (
+                                                                                 self.eps_end - self.eps_start) * fraction))
 
                 self.episode += 1
                 epi_step = 0
@@ -90,7 +93,6 @@ class Normal_runner(RL_runner):
                 agent.learn()
 
                 if i % target_update_interval == 0:
-
                     agent.target_update()
 
             if i % 1000 == 0:

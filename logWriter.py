@@ -6,11 +6,12 @@ import cv2
 
 from keras.callbacks import TensorBoard
 
-import tensorflow as tf 
+import tensorflow as tf
 
 
 class LogWriter():
-    def __init__(self, root, batch_size, histogram_freq=0, write_graph=True, write_grads=False, save_model_interval=100):
+    def __init__(self, root, batch_size, histogram_freq=0, write_graph=True, write_grads=False,
+                 save_model_interval=100):
         # 保存先のパス
         self.root = root
 
@@ -23,13 +24,13 @@ class LogWriter():
         os.mkdir(os.path.join(self.root, "models"))
         os.mkdir(os.path.join(self.root, "movies"))
 
-        self.tb= TensorBoard(
-                    log_dir=os.path.join(self.root, "logs"),
-                    histogram_freq=histogram_freq,
-                    batch_size=batch_size,
-                    write_graph=write_graph,
-                    write_grads=write_grads
-                    )
+        self.tb = TensorBoard(
+            log_dir=os.path.join(self.root, "logs"),
+            histogram_freq=histogram_freq,
+            batch_size=batch_size,
+            write_graph=write_graph,
+            write_grads=write_grads
+        )
 
         self.batch_id = 0
 
@@ -43,7 +44,7 @@ class LogWriter():
 
     def get_movie_pass(self):
         return os.path.join(self.root, "movies")
-    
+
     def add_loss(self, losses):
         # lossをtensorboardに書き込み
         for loss, name in zip(losses, self.loss_names):
@@ -52,13 +53,13 @@ class LogWriter():
             # summary_value.simple_value = loss
             # summary_value.tag = name
 
-            summary.value.add(tag=name,simple_value=loss)
+            summary.value.add(tag=name, simple_value=loss)
 
             self.tb.writer.add_summary(summary, self.batch_id)
             self.tb.writer.flush()
 
             self.tb.on_epoch_end(self.batch_id)
-        
+
         # csvに出力
         with open(os.path.join(self.root, 'csv', 'loss.csv'), 'a', newline='') as f:
             writer = csv.writer(f)
@@ -68,7 +69,7 @@ class LogWriter():
 
     def set_loss_name(self, names):
         self.loss_names = names
-        print("loss_names: ",self.loss_names)
+        print("loss_names: ", self.loss_names)
         # csvに出力
         with open(os.path.join(self.root, 'csv', 'loss.csv'), 'w', newline='') as f:
             writer = csv.writer(f)
@@ -89,7 +90,7 @@ class LogWriter():
         # summary_value.simple_value = reward
         # summary_value.tag = "episode_reward"
 
-        summary.value.add(tag="episode_reward",simple_value=reward) # change
+        summary.value.add(tag="episode_reward", simple_value=reward)  # change
 
         self.tb.writer.add_summary(summary, episode)
         self.tb.writer.flush()
@@ -109,7 +110,7 @@ class LogWriter():
         # summary_value.simple_value = self.max_reward
         # summary_value.tag = "max_episode_reward"
 
-        summary.value.add(tag="max_episode_reward",simple_value=self.max_reward) # change
+        summary.value.add(tag="max_episode_reward", simple_value=self.max_reward)  # change
 
         self.tb.writer.add_summary(summary, self.iteration)
         self.tb.writer.flush()
