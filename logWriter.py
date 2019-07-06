@@ -48,9 +48,12 @@ class LogWriter():
         # lossをtensorboardに書き込み
         for loss, name in zip(losses, self.loss_names):
             summary = tf.Summary()
-            summary_value = summary.value.add()
-            summary_value.simple_value = loss
-            summary_value.tag = name
+            # summary_value = summary.value.add()
+            # summary_value.simple_value = loss
+            # summary_value.tag = name
+
+            summary.value.add(tag=name,simple_value=loss)
+
             self.tb.writer.add_summary(summary, self.batch_id)
             self.tb.writer.flush()
 
@@ -65,8 +68,9 @@ class LogWriter():
 
     def set_loss_name(self, names):
         self.loss_names = names
+        print("loss_names: ",self.loss_names)
         # csvに出力
-        with open(os.path.join(self.root, 'csv', 'reward.csv'), 'w', newline='') as f:
+        with open(os.path.join(self.root, 'csv', 'loss.csv'), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(self.loss_names)
 
@@ -81,9 +85,12 @@ class LogWriter():
 
         # rewardをtensorboardに書き込み
         summary = tf.Summary()
-        summary_value = summary.value.add()
-        summary_value.simple_value = reward
-        summary_value.tag = "episode_reward"
+        # summary_value = summary.value.add()
+        # summary_value.simple_value = reward
+        # summary_value.tag = "episode_reward"
+
+        summary.value.add(tag="episode_reward",simple_value=reward) # change
+
         self.tb.writer.add_summary(summary, episode)
         self.tb.writer.flush()
 
@@ -98,9 +105,12 @@ class LogWriter():
 
         # max_rewardをtensorboardに書き込み
         summary = tf.Summary()
-        summary_value = summary.value.add()
-        summary_value.simple_value = self.max_reward
-        summary_value.tag = "max_episode_reward"
+        # summary_value = summary.value.add()
+        # summary_value.simple_value = self.max_reward
+        # summary_value.tag = "max_episode_reward"
+
+        summary.value.add(tag="max_episode_reward",simple_value=self.max_reward) # change
+
         self.tb.writer.add_summary(summary, self.iteration)
         self.tb.writer.flush()
 

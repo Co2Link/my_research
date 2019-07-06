@@ -6,14 +6,14 @@ class RL_runner(metaclass=ABCMeta):
 
         self.logger=logger
 
-        self.epi_count=0
+        self.episode=0
 
     @abstractmethod
     def traj_generator(self,agent,env):
         pass
 
     @abstractmethod
-    def train(self,agent,env,max_iter,batch_size,time_step=0,warmup=0,target_update_interval=0):
+    def train(self,agent,env,max_iter,batch_size,warmup=0,target_update_interval=0):
         pass
 
     @abstractmethod
