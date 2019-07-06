@@ -5,7 +5,9 @@ from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
 from keras import backend as K
 import tensorflow as tf
-
+import time
+import csv
+import os
 from atari_wrappers import *
 
 # 学習用定数
@@ -54,20 +56,22 @@ def ddqn_main():
 
     runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
 
-    ddqn_agent.save_model(-1, "model.hdf5")
+    ddqn_agent.save_model(-1)
 
 
 if __name__ == '__main__':
+    start_time=time.time()
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('-iter', '--max_iteration', type=int, default=1000000)
+    parser.add_argument('-iter', '--max_iteration', type=int, default=2000000)
     parser.add_argument('-b', '--batchsize', type=int, default=32)
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.0001)
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('-e_start', '--eps_start', type=float, default=1.0)
     parser.add_argument('-e_end', '--eps_end', type=float, default=0.01)
-    parser.add_argument('-e_step', '--eps_step', type=float, default=1e5)
-    parser.add_argument('-m_len', '--max_mem_len', type=int, default=10000)
-    parser.add_argument('--warmup', type=int, default=0)
+    parser.add_argument('-e_step', '--eps_step', type=float, default=4e5)
+    parser.add_argument('-m_len', '--max_mem_len', type=int, default=40000)
+    parser.add_argument('--warmup', type=int, default=40000)
     parser.add_argument('--target_update', type=int, default=1000)
     parser.add_argument('-s', '--save_model_interval', type=int, default=100)
     parser.add_argument('-r', '--root_path', type=str, default="./root")
@@ -97,4 +101,14 @@ if __name__ == '__main__':
     # sess = tf.Session(config=config)
     # K.set_session(sess)
 
+    with open(os.path.join('./setting.csv'),'w',newline='') as f:
+        writer=csv.writer(f)
+        for k,v in vars(args).items():
+            writer.writerow((k,v))
+
     ddqn_main()
+
+    print("total time cost: {}".format(time.time()-start_time))
+
+    with open(os.path.join('./setting.csv'),'a',newline='') as f:
+        writer.writerow(('total time cost',time.time()-start_time))
