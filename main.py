@@ -63,15 +63,15 @@ if __name__ == '__main__':
     start_time=time.time()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-iter', '--max_iteration', type=int, default=2000000)
+    parser.add_argument('-iter', '--max_iteration', type=int, default=int(1e6))
     parser.add_argument('-b', '--batchsize', type=int, default=32)
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.0001)
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('-e_start', '--eps_start', type=float, default=1.0)
     parser.add_argument('-e_end', '--eps_end', type=float, default=0.01)
-    parser.add_argument('-e_step', '--eps_step', type=float, default=4e5)
-    parser.add_argument('-m_len', '--max_mem_len', type=int, default=40000)
-    parser.add_argument('--warmup', type=int, default=40000)
+    parser.add_argument('-e_step', '--eps_step', type=int, default=int(1e5))
+    parser.add_argument('-m_len', '--max_mem_len', type=int, default=int(1e4))
+    parser.add_argument('--warmup', type=int, default=int(1e4))
     parser.add_argument('--target_update', type=int, default=1000)
     parser.add_argument('-s', '--save_model_interval', type=int, default=100)
     parser.add_argument('-r', '--root_path', type=str, default="./root")
@@ -97,9 +97,9 @@ if __name__ == '__main__':
     RENDER=args.render
     LOG=args.log
 
-    # config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
-    # sess = tf.Session(config=config)
-    # K.set_session(sess)
+    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
+    sess = tf.Session(config=config)
+    K.set_session(sess)
 
     with open(os.path.join('./setting.csv'),'w',newline='') as f:
         writer=csv.writer(f)
