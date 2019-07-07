@@ -130,10 +130,12 @@ class LogWriter():
             writer = csv.writer(f)
             for k, v in vars(args).items():
                 writer.writerow((k, v))
+                print(k,v)
 
     def save_total_time_cost(self):
         """ Call it at the end of the code """
         with open(os.path.join(self.root, 'setting.csv'), 'a',newline='') as f:
             writer = csv.writer(f)
             writer.writerow(('total_time_cost', time.time() - self.start_time))
+            print('total_time_cost: ',time.time()-self.start_time)
 

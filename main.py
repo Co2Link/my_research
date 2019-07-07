@@ -27,6 +27,7 @@ TARGET_UPDATE = 1000
 
 RENDER = False
 LOG=False
+GAME="BreakoutNoFrameskip-v4"
 
 SAVE_MODEL_INTERVAL = 100
 
@@ -34,8 +35,9 @@ ROOT_PATH = "./root"
 
 
 def ddqn_main(logger):
+
     # make environment
-    env = make_atari("BreakoutNoFrameskip-v4")
+    env = make_atari(GAME)
 
     if logger is not None:
         env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
@@ -75,6 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--render', action="store_true")
     parser.add_argument('--log', action="store_true")
+    parser.add_argument('--game',type=str,default='BreakoutNoFrameskip-v4')
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -91,6 +94,7 @@ if __name__ == '__main__':
     ROOT_PATH = args.root_path
     RENDER=args.render
     LOG=args.log
+    GAME=args.game
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
     sess = tf.Session(config=config)
