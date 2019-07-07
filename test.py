@@ -32,8 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--log', action="store_true")
     args = parser.parse_args()
 
-    with open(os.path.join(root,'csv','setting.csv'),'a',newline='') as f:
-        writer=csv.writer(f)
-        for k,v in vars(args).items():
-            writer.writerow((k,v))
-
+    # with open(os.path.join(root,'csv','setting.csv'),'a',newline='') as f:
+    #     writer=csv.writer(f)
+    #     for k,v in vars(args).items():
+    #         writer.writerow((k,v))
+    print("abc"+1)

@@ -33,31 +33,26 @@ SAVE_MODEL_INTERVAL = 100
 ROOT_PATH = "./root"
 
 
-def ddqn_main():
+def ddqn_main(logger):
     # make environment
     env = make_atari("BreakoutNoFrameskip-v4")
 
-    # TensorBoard
-    if LOG:
-
-        logger = LogWriter(ROOT_PATH, BATCH_SIZE)
-
-        # save movies
+    if logger is not None:
         env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
-
-    else:
-        logger=None
 
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
-    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER)
+    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER,SAVE_MODEL_INTERVAL)
 
     ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, 1e4, 32)
 
     runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
 
-    ddqn_agent.save_model(-1)
-
+    if logger is not None:
+        # Save the final model
+        logger.save_model(ddqn_agent,-1)
+        # Record the total time used
+        logger.save_total_time_cost()
 
 if __name__ == '__main__':
     start_time=time.time()
@@ -101,14 +96,12 @@ if __name__ == '__main__':
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    with open(os.path.join('./setting.csv'),'w',newline='') as f:
-        writer=csv.writer(f)
-        for k,v in vars(args).items():
-            writer.writerow((k,v))
+    if LOG:
+        logger = LogWriter(ROOT_PATH, BATCH_SIZE)
+        logger.save_setting(args)
+    else:
+        logger=None
 
-    ddqn_main()
+    ddqn_main(logger)
 
     print("total time cost: {}".format(time.time()-start_time))
-
-    with open(os.path.join('./setting.csv'),'a',newline='') as f:
-        writer.writerow(('total time cost',time.time()-start_time))

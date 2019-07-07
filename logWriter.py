@@ -1,8 +1,8 @@
 import os
 import shutil
+import time
 
 import csv
-import cv2
 
 from keras.callbacks import TensorBoard
 
@@ -10,13 +10,16 @@ import tensorflow as tf
 
 
 class LogWriter():
-    def __init__(self, root, batch_size, histogram_freq=0, write_graph=True, write_grads=False,
-                 save_model_interval=100):
+    def __init__(self, root, batch_size, histogram_freq=0, write_graph=True, write_grads=False):
         # 保存先のパス
         self.root = root
 
-        if os.path.exists(self.root):
-            shutil.rmtree(self.root)
+        self.start_time = time.time()
+
+        count=0
+        while(os.path.exists(self.root)):
+            self.root=root+'-'+str(count)
+            count+=1
 
         os.mkdir(self.root)
         os.mkdir(os.path.join(self.root, "logs"))
@@ -33,9 +36,6 @@ class LogWriter():
         )
 
         self.batch_id = 0
-
-        # モデル保存間隔
-        self.save_model_interval = save_model_interval
 
         self.names = None
 
@@ -86,10 +86,6 @@ class LogWriter():
 
         # rewardをtensorboardに書き込み
         summary = tf.Summary()
-        # summary_value = summary.value.add()
-        # summary_value.simple_value = reward
-        # summary_value.tag = "episode_reward"
-
         summary.value.add(tag="episode_reward", simple_value=reward)  # change
 
         self.tb.writer.add_summary(summary, episode)
@@ -124,8 +120,20 @@ class LogWriter():
 
     def save_model(self, agent, episode):
         # 途中経過保存
-        if episode % self.save_model_interval == 0:
-            agent.save_model(episode, os.path.join(self.root, 'models', 'model'))
+        agent.save_model(episode, os.path.join(self.root, 'models', 'model'))
 
     def set_model(self, model):
         self.tb.set_model(model)
+
+    def save_setting(self, args):
+        with open(os.path.join(self.root, 'setting.csv'), 'w',newline='') as f:
+            writer = csv.writer(f)
+            for k, v in vars(args).items():
+                writer.writerow((k, v))
+
+    def save_total_time_cost(self):
+        """ Call it at the end of the code """
+        with open(os.path.join(self.root, 'setting.csv'), 'a',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(('total_time_cost', time.time() - self.start_time))
+

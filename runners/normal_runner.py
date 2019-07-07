@@ -6,13 +6,14 @@ import time
 
 
 class Normal_runner(RL_runner):
-    def __init__(self, eps_start=1.0, eps_end=0.01, eps_step=1e5, logger=None, render=False):
+    def __init__(self, eps_start=1.0, eps_end=0.01, eps_step=1e5, logger=None, render=False,save_model_interval=100):
         super().__init__(logger)
 
         self.eps_start = eps_start
         self.eps_end = eps_end
         self.eps_step = float(eps_step)
         self.render = render
+        self.save_model_interval=save_model_interval
 
     def traj_generator(self, agent, env):
         """ generate trajectory """
@@ -56,7 +57,8 @@ class Normal_runner(RL_runner):
 
                 # log
                 if self.logger is not None:
-                    self.logger.save_model(agent, self.episode)
+                    if self.episode%self.save_model_interval==0:
+                        self.logger.save_model(agent, self.episode)
 
                     self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
                             self.eps_start + (self.eps_end - self.eps_start) * fraction)})
