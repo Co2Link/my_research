@@ -5,7 +5,7 @@ import numpy as np
 from keras import Sequential
 from keras.callbacks import TensorBoard
 from keras.layers import Dense, Input
-from keras.optimizers import Adam
+from keras.optimizers import Adam,RMSprop
 from keras import backend as K
 
 import tensorflow as tf
@@ -28,7 +28,7 @@ def huberloss(y_true, y_pred):
 
 
 class DDQN(Agent):
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size):
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size,scale):
         super().__init__(env, logger)
 
         self.batch_size = batch_size
@@ -38,18 +38,19 @@ class DDQN(Agent):
         self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
         self.model.compile(optimizer=Adam(lr), loss=huberloss)
         self.target.compile(optimizer=Adam(lr), loss="mse")
-        self.memory_size = int(memory_size)
+        self.max_memory_size = int(memory_size)
         self.gamma = gamma
+        self.scale=scale
 
         if logger is not None:
             logger.set_model(self.model)
             logger.set_loss_name([*self.model.metrics_names])
 
         # memory
-        self.s_memory = RingBuf(size=self.memory_size)
-        self.a_memory = RingBuf(size=self.memory_size)
-        self.r_memory = RingBuf(size=self.memory_size)
-        self.ns_memory = RingBuf(size=self.memory_size)
+        self.s_memory = RingBuf(size=self.max_memory_size)
+        self.a_memory = RingBuf(size=self.max_memory_size)
+        self.r_memory = RingBuf(size=self.max_memory_size)
+        self.ns_memory = RingBuf(size=self.max_memory_size)
 
     def memorize(self, s, a, r, s_):
         """ Add memory """
@@ -106,4 +107,10 @@ class DDQN(Agent):
         return loss
 
     def LazyFrame2array(self, LazyFrame):
-        return np.array(LazyFrame)
+        if self.scale:
+            return np.array(LazyFrame)
+        else:
+            return np.array(LazyFrame).astype(np.float32)/255.0
+
+    def memory_size(self):
+        return len(self.s_memory)

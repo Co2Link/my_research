@@ -46,7 +46,7 @@ class Normal_runner(RL_runner):
             total_step += 1
 
             if self.logger is not None:
-                self.logger.add_reward_iter(episode_reward)
+                self.logger.count_iteration()
 
             if not done:
                 yield state, action, reward, state_
@@ -99,7 +99,7 @@ class Normal_runner(RL_runner):
 
             if i % 1000 == 0:
                 # check time cost
-                print("1e4 iteration cost: {}".format(time.time() - start_time))
+                print("1e3 iteration cost: {}, memory size: {}".format(time.time() - start_time,agent.memory_size()))
                 start_time = time.time()
 
 

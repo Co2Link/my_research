@@ -28,6 +28,7 @@ TARGET_UPDATE = 1000
 RENDER = False
 LOG=False
 GAME="BreakoutNoFrameskip-v4"
+SCALE=True
 
 SAVE_MODEL_INTERVAL = 100
 
@@ -42,11 +43,11 @@ def ddqn_main(logger):
     if logger is not None:
         env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
 
-    env = wrap_deepmind(env, frame_stack=True, scale=True)
+    env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
 
     runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER,SAVE_MODEL_INTERVAL)
 
-    ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, 1e4, 32)
+    ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE,SCALE)
 
     runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
 
@@ -54,7 +55,7 @@ def ddqn_main(logger):
         # Save the final model
         logger.save_model(ddqn_agent,-1)
         # Record the total time used
-        logger.save_total_time_cost()
+        logger.log_total_time_cost()
 
 if __name__ == '__main__':
     start_time=time.time()
@@ -78,6 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--render', action="store_true")
     parser.add_argument('--log', action="store_true")
     parser.add_argument('--game',type=str,default='BreakoutNoFrameskip-v4')
+    parser.add_argument('--no_scale',action="store_false")
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -95,6 +97,7 @@ if __name__ == '__main__':
     RENDER=args.render
     LOG=args.log
     GAME=args.game
+    SCALE=args.no_scale
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
     sess = tf.Session(config=config)
