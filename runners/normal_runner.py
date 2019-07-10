@@ -53,7 +53,7 @@ class Normal_runner(RL_runner):
             else:
                 state_ = np.zeros(np.array(state_).shape)
 
-                yield state_, action, reward, state_
+                yield state, action, reward, state_
 
                 # log
                 if self.logger is not None:

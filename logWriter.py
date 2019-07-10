@@ -1,5 +1,4 @@
 import os
-import shutil
 import time
 
 import csv
@@ -16,6 +15,7 @@ class LogWriter():
 
         self.start_time = time.time()
 
+        # seperate log directory for each run
         count=0
         while(os.path.exists(self.root)):
             self.root=root+'-'+str(count)
@@ -35,11 +35,13 @@ class LogWriter():
             write_grads=write_grads
         )
 
+        # count batch
         self.batch_id = 0
 
-        self.names = None
+        # minimum reward
+        self.max_reward = -1e4
 
-        self.max_reward = -1e4 # minimum reward
+        # count iteration
         self.iteration = 1
 
     def get_movie_pass(self):

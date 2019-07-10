@@ -14,6 +14,17 @@ if __name__ == '__main__':
     env=gym.make('Breakout-v0')
     env.reset()
 
-    s,r,d,_=env.step(env.action_space.sample())
+    action_space=env.action_space
+    print(action_space)
 
-    print(type(r))
+    env=gym.make('QbertNoFrameskip-v4')
+    env.reset()
+
+    action_space=env.action_space
+    print(action_space)
+
+    env=gym.make('Breakout-v0')
+    env.reset()
+
+    action_space=env.action_space
+    print(action_space)

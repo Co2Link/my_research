@@ -57,6 +57,7 @@ def ddqn_main(logger):
         # Record the total time used
         logger.log_total_time_cost()
 
+
 if __name__ == '__main__':
     start_time=time.time()
 
