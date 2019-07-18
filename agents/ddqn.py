@@ -28,16 +28,23 @@ def huberloss(y_true, y_pred):
 
 
 class DDQN(Agent):
+    """
+    Double-Deep-Q-Learning
+    almost the same implementation as the DQN-paper( Human-Level... )
+    except this implementation has Double-Q-Learning and a different optimizer
+    """
     def __init__(self, env, lr, gamma, logger, memory_size, batch_size,scale):
         super().__init__(env, logger)
 
         self.batch_size = batch_size
 
         # build network
-        self.model = self.build_CNN_model(self.state_shape, self.action_num, "eval")
+        self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
         self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
-        self.model.compile(optimizer=Adam(lr), loss=huberloss)
-        self.target.compile(optimizer=Adam(lr), loss="mse")
+        # self.model.compile(optimizer=Adam(lr), loss=huberloss)
+        # self.target.compile(optimizer=Adam(lr), loss="mse")
+        self.model.compile(optimizer=RMSprop(lr,0.95,0.01),loss=huberloss)
+        self.target.compile(optimizer=RMSprop(lr,0.95,0.01),loss="mse")
         self.max_memory_size = int(memory_size)
         self.gamma = gamma
         self.scale=scale
@@ -69,7 +76,7 @@ class DDQN(Agent):
         self.target.set_weights(self.model.get_weights())
 
     def learn(self):
-        """ Update eval network """
+        """ Update model network """
         # sample from memory
         index = list(np.random.choice(len(self.s_memory), self.batch_size))
 
