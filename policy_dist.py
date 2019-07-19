@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import gym
 from keras.layers import Flatten, Conv2D, Input, Dense
 from keras.models import Model
 from keras.optimizers import Adam

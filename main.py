@@ -6,34 +6,7 @@ from logWriter import LogWriter
 from keras import backend as K
 import tensorflow as tf
 import time
-import csv
-import os
 from atari_wrappers import *
-
-# 学習用定数
-MAX_ITERATION = 1000000
-LEARNUNG_RATE = 0.001
-BATCH_SIZE = 32
-EPISODE = None
-GAMMA = 0.99
-
-EPS_START = 1.0
-EPS_END = 0.001
-EPS_STEP = 1e5
-
-MAX_MEM_LEN = 10000
-WARMUP = 10000
-TARGET_UPDATE = 1000
-
-RENDER = False
-LOG=False
-GAME="BreakoutNoFrameskip-v4"
-SCALE=True
-
-SAVE_MODEL_INTERVAL = 100
-
-ROOT_PATH = "./result"
-
 
 def ddqn_main(logger):
 
@@ -73,6 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--target_update', type=int, default=1000)
     parser.add_argument('-s', '--save_model_interval', type=int, default=100)
     parser.add_argument('-g', '--gpu', type=str, default="0")
+    parser.add_argument('--root',type=str,default="./result")
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--render', action="store_true")
     parser.add_argument('--log', action="store_true")
@@ -95,6 +69,7 @@ if __name__ == '__main__':
     LOG=args.log
     GAME=args.game
     SCALE=args.no_scale
+    ROOT_PATH=args.root
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
     sess = tf.Session(config=config)

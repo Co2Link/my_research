@@ -1,10 +1,8 @@
 import os
 import time
-
 import csv
 
 from keras.callbacks import TensorBoard
-
 import tensorflow as tf
 
 

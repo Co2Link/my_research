@@ -1,18 +1,8 @@
 import os
 
-import random
-
-import numpy as np
-
 from keras import Sequential
-from keras.callbacks import TensorBoard
 from keras.layers import Dense, Input, Conv2D, Flatten
 from keras.models import Model
-from keras.optimizers import Adam
-from keras import backend as K
-
-import tensorflow as tf
-
 
 from abc import  ABCMeta,abstractmethod
 
