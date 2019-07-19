@@ -32,7 +32,7 @@ SCALE=True
 
 SAVE_MODEL_INTERVAL = 100
 
-ROOT_PATH = "./root"
+ROOT_PATH = "./result"
 
 
 def ddqn_main(logger):
@@ -66,14 +66,12 @@ if __name__ == '__main__':
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.0001)
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('-e_start', '--eps_start', type=float, default=1.0)
-    parser.add_argument('-e_end', '--eps_end', type=float, default=0.01)
+    parser.add_argument('-e_end', '--eps_end', type=float, default=0.1)
     parser.add_argument('-e_step', '--eps_step', type=int, default=int(1e5))
     parser.add_argument('-m_len', '--max_mem_len', type=int, default=int(1e4))
     parser.add_argument('--warmup', type=int, default=int(1e4))
     parser.add_argument('--target_update', type=int, default=1000)
     parser.add_argument('-s', '--save_model_interval', type=int, default=100)
-    parser.add_argument('-r', '--root_path', type=str, default="./root")
-    parser.add_argument('-a_type', '--augment_type', type=str, default="None")
     parser.add_argument('-g', '--gpu', type=str, default="0")
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--render', action="store_true")
@@ -93,7 +91,6 @@ if __name__ == '__main__':
     WARMUP = args.warmup
     TARGET_UPDATE = args.target_update
     SAVE_MODEL_INTERVAL = args.save_model_interval
-    ROOT_PATH = args.root_path
     RENDER=args.render
     LOG=args.log
     GAME=args.game
