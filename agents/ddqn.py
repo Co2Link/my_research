@@ -38,10 +38,10 @@ class DDQN(Agent):
         # build network
         self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
         self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
-        # self.model.compile(optimizer=Adam(lr), loss=huberloss)
-        # self.target.compile(optimizer=Adam(lr), loss="mse")
-        self.model.compile(optimizer=RMSprop(lr,0.95,0.01),loss=huberloss)
-        self.target.compile(optimizer=RMSprop(lr,0.95,0.01),loss="mse")
+        self.model.compile(optimizer=Adam(lr), loss=huberloss)
+        self.target.compile(optimizer=Adam(lr), loss="mse")
+        # self.model.compile(optimizer=RMSprop(lr,0.95,0.01),loss=huberloss)
+        # self.target.compile(optimizer=RMSprop(lr,0.95,0.01),loss="mse")
         self.max_memory_size = int(memory_size)
         self.gamma = gamma
         self.scale=scale
