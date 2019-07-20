@@ -131,5 +131,5 @@ class LogWriter():
         with open(os.path.join(self.save_path, 'setting.csv'), 'a',newline='') as f:
             writer = csv.writer(f)
             writer.writerow(('total_time_cost', time.time() - self.start_time))
-            print('total_time_cost: ',time.time()-self.start_time)
+            print('*** total_time_cost:{} ***'.format(time.time()-self.start_time))
 

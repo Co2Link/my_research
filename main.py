@@ -8,8 +8,8 @@ import tensorflow as tf
 import time
 from atari_wrappers import *
 
-def ddqn_main(logger):
 
+def ddqn_main(logger):
     # make environment
     env = make_atari(GAME)
 
@@ -18,20 +18,21 @@ def ddqn_main(logger):
 
     env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
 
-    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER,SAVE_MODEL_INTERVAL)
+    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL)
 
-    ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE,SCALE)
+    ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
 
     runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
 
     if logger is not None:
         # Save the final model
-        logger.save_model(ddqn_agent,-1)
-        # Record the total time used
+        logger.save_model(ddqn_agent, -1)
+        # Record the total used time
         logger.log_total_time_cost()
 
+
 if __name__ == '__main__':
-    start_time=time.time()
+    start_time = time.time()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-iter', '--max_iteration', type=int, default=int(1e6))
@@ -46,12 +47,12 @@ if __name__ == '__main__':
     parser.add_argument('--target_update', type=int, default=1000)
     parser.add_argument('-s', '--save_model_interval', type=int, default=100)
     parser.add_argument('-g', '--gpu', type=str, default="0")
-    parser.add_argument('--root',type=str,default="./result")
+    parser.add_argument('--root', type=str, default="./result")
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--render', action="store_true")
     parser.add_argument('--log', action="store_true")
-    parser.add_argument('--game',type=str,default='BreakoutNoFrameskip-v4')
-    parser.add_argument('--no_scale',action="store_false")
+    parser.add_argument('--game', type=str, default='BreakoutNoFrameskip-v4')
+    parser.add_argument('--no_scale', action="store_false")
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -65,11 +66,11 @@ if __name__ == '__main__':
     WARMUP = args.warmup
     TARGET_UPDATE = args.target_update
     SAVE_MODEL_INTERVAL = args.save_model_interval
-    RENDER=args.render
-    LOG=args.log
-    GAME=args.game
-    SCALE=args.no_scale
-    ROOT_PATH=args.root
+    RENDER = args.render
+    LOG = args.log
+    GAME = args.game
+    SCALE = args.no_scale
+    ROOT_PATH = args.root
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
     sess = tf.Session(config=config)
@@ -79,8 +80,8 @@ if __name__ == '__main__':
         logger = LogWriter(ROOT_PATH, BATCH_SIZE)
         logger.save_setting(args)
     else:
-        logger=None
+        logger = None
 
     ddqn_main(logger)
 
-    print("total time cost: {}".format(time.time()-start_time))
+    print("total time cost: {}".format(time.time() - start_time))

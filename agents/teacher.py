@@ -13,25 +13,19 @@ GAME_Qbert = 'QbertNoFrameskip-v4'  # discrete(6)
 GAME_Pong = 'PongNoFrameskip-v4'  # discrete(6)
 
 
-
 class Teacher():
-    def __init__(self, path, game_name, epsilon=0.05, max_mem_size=50000):
+    def __init__(self, path, env, epsilon=0.05, mem_size=50000):
 
-        # make environment
-        env = make_atari(game_name)
-        env = wrap_deepmind(env, frame_stack=True, scale=True)
         self.env = env
-        self.game_name = game_name
-        self.output_num = self.env.action_space.n
 
         # load model
-        model = self.build_model(input_shape=self.env.observation_space.shape, output_num=self.output_num)
+        model = self.build_model(input_shape=self.env.observation_space.shape, output_num=self.env.action_space.n)
         model.load_weights(path)
         self.model = model
 
         # Memory
-        self.s_m = deque(maxlen=max_mem_size)   # State
-        self.o_m = deque(maxlen=max_mem_size)   # output
+        self.s_m = deque(maxlen=mem_size)  # State
+        self.o_m = deque(maxlen=mem_size)  # output
 
         self.mem_gen = self._memory_generator()
 
@@ -52,21 +46,22 @@ class Teacher():
 
         return Model(inputs, q)
 
-    def select_action(self,state):
+    def select_action(self, state):
+
         return self._select_action_output_logit(state)[0]
 
-    def add_memories(self,size=5000):
+    def add_memories(self, size=5000):
 
         for i in range(size):
             state, output = next(self.mem_gen)
             self.s_m.append(state)
             self.o_m.append(output)
-        print("* add {} memories,memory size: {} *".format(size,self.get_memory_size()))
+        print("* add {} memories,memory size: {} *".format(size, self.get_memory_size()))
 
     def get_memory_size(self):
         return len(self.s_m)
 
-    def sample_memories(self,size=32):
+    def sample_memories(self, size=32):
 
         index = np.random.choice(len(self.s_m), size)
         index = list(index)
@@ -89,7 +84,7 @@ class Teacher():
                 action = self.env.action_space.sample()
 
             # step
-            state_, reward, done, _ = self.env.step(action)
+            state_, _, done, _ = self.env.step(action)
 
             if done:
                 state_ = self.env.reset()
@@ -132,14 +127,21 @@ class Teacher():
     def __str__(self):
         return self.game_name
 
+
 def DEBUG():
     # keras setup
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0'))
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    breakout_teacher=Teacher(os.path.join(MODEL_PATH,'breakout.h5f'),GAME_Breakout)
+    env=make_atari(GAME_Breakout)
+    env=wrap_deepmind(env,frame_stack=True,scale=True)
+
+    # breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'breakout.h5f'), GAME_Breakout)
+    breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'model_-1.h5f'),env)
+
     breakout_teacher.play()
+
 
 if __name__ == '__main__':
     DEBUG()

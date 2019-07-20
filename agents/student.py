@@ -2,17 +2,16 @@ import numpy as np
 from keras.layers import Flatten, Conv2D, Input, Dense
 from keras.models import Model
 from keras.optimizers import Adam
-from agents.agent import Agent
-from atari_wrappers import wrap_deepmind, make_atari
+from agents.agent import Agent, Student
 import tensorflow as tf
 from keras import backend as K
+from keras.losses import kullback_leibler_divergence, mean_squared_error
 
 
 def kullback_leibler_divergence(y_true, y_pred):
     tau = 0.01
-    y_true = K.clip(y_true, K.epsilon(), 1)
-    y_pred = K.clip(y_pred, K.epsilon(), 1)
-    return K.sum((y_true / tau) * K.log((y_true / tau) / y_pred), axis=-1)
+
+    return K.sum(K.softmax(y_true / tau) * K.log(K.softmax(y_true / tau) / K.softmax(y_pred)), axis=-1)
 
 
 class Student_():
@@ -26,7 +25,7 @@ class Student_():
 
         self.model_dict = self.build_model()
         for teacher in self.teachers:
-            self.model_dict[str(teacher)].compile(optimizer=Adam(lr=0.001), loss=kullback_leibler_divergence)
+            self.model_dict[str(teacher)].compile(optimizer=Adam(lr=0.0001), loss='mse')
 
     def build_model(self, input_shape=(84, 84, 4), name="default"):
         """ build CNN network """
@@ -64,8 +63,8 @@ class Student_():
             # 1000 time update every
             for m in range(1000):
                 s_batch, o_batch, _ = teacher.sample_memories()
-                s_batch=self.LazyFrame2array(s_batch)
-                o_batch=np.array(o_batch)
+                s_batch = self.LazyFrame2array(s_batch)
+                o_batch = np.array(o_batch)
 
                 loss = self.model_dict[str(teacher)].train_on_batch(s_batch, o_batch)
                 # self.logger.add_loss([loss])
@@ -77,32 +76,71 @@ class Student_():
         return np.array(lazyframe)
 
 
-class Student(Agent):
-    def __init__(self,env,lr,logger,batch_size,epsilon):
-        super().__init__(env,logger)
+class SingleDtStudent(Student):
+    """ distill from single teacher """
 
-        self.model=self.build_CNN_model(self.state_shape,self.action_num,"student")
-        self.model.compile(optimizer=Adam(lr),loss=kullback_leibler_divergence)
+    def __init__(self, env, lr, logger, batch_size, epsilon, teacher, add_mem_num, update_num, epoch):
+        super().__init__(env, logger)
 
-        self.batch_size=batch_size
+        self.batch_size = batch_size
 
-        self.eps=epsilon
+        self.eps = epsilon
 
+        self.teacher = teacher
 
-    def learn(self,memories):
-        s_batch,o_batch=memories
+        # the amount of memory we add for each epoch
+        self.add_mem_num = add_mem_num
+        # the number of times of update for each epock
+        self.update_num = update_num
 
-        s_batch=self._LazyFrame2array(s_batch)
+        self.epoch = epoch
 
-        loss=self.model.train_on_batch(s_batch,o_batch)
+        # build model
+        self.model = self.build_CNN_model(self.state_shape, self.action_num, "student")
+        self.model.compile(optimizer=Adam(lr), loss=kullback_leibler_divergence)
 
-        if self.logger is not None:
-            self.logger.add_loss([loss])
+        # set logger
+        if logger is not None:
+            logger.set_model(self.model)
+            logger.set_loss_name([*self.model.metrics_names])
 
-    def select_action(self,state):
+    def distill(self):
+
+        for e in range(self.epoch):
+
+            self.teacher.add_memories(size=self.add_mem_num)
+
+            total_loss = 0
+            for i in range(self.update_num):
+                s_batch, o_batch = self.teacher.sample_memories()
+
+                s_batch = self._LazyFrame2array(s_batch)
+                o_batch = np.array(o_batch)
+
+                loss = self.model.train_on_batch(s_batch, o_batch)
+
+                total_loss += loss
+
+                if self.logger is not None:
+                    self.logger.add_loss([loss])
+
+            print("*** Epoch:{} ,Memory-size: {},avg_loss: {} ***".format(e + 1, self.teacher.get_memory_size(),
+                                                                          total_loss / self.update_num))
+
+    def select_action(self, state):
         pass
 
     def _LazyFrame2array(self, LazyFrame):
         return np.array(LazyFrame)
 
 
+if __name__ == '__main__':
+    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0'))
+    sess = tf.Session(config=config)
+    K.set_session(sess)
+
+    a=np.array([[1,2,3,4,5]]).astype(np.float32)
+    b=K.softmax(a)
+    c=sess.run(b)
+
+    print(c)

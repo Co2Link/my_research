@@ -1,9 +1,6 @@
 import random
 import numpy as np
 
-from keras import Sequential
-from keras.callbacks import TensorBoard
-from keras.layers import Dense, Input
 from keras.optimizers import Adam,RMSprop
 from keras import backend as K
 import tensorflow as tf
