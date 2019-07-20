@@ -19,7 +19,7 @@ def SingleDistillation_main(logger):
 
     teacher=Teacher(MODEL_PATH, env, EPSILON, MEM_SIZE)
 
-    student=SingleDtStudent(env,LEARNING_RATE,logger,BATCH_SIZE,EPSILON,teacher,ADD_MEM_NUM,UPDATE_NUM,EPOCH)
+    student=SingleDtStudent(env,LEARNING_RATE,logger,BATCH_SIZE,EPSILON,teacher,ADD_MEM_NUM,UPDATE_NUM,EPOCH,LOSS_FUC)
 
     student.distill()
 
@@ -41,6 +41,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--root_path', type=str, default='./result_DT')
     parser.add_argument('--model_path', type=str, default='./teacher/breakout.h5f')
     parser.add_argument('--log', action='store_true')
+    parser.add_argument('--loss_fuc',type=str,default='mse')
+    parser.add_argument('--message',type=str,default='default')
     args = parser.parse_args()
 
     LEARNING_RATE = args.learning_rate
@@ -54,6 +56,7 @@ if __name__ == '__main__':
     ROOT_PATH = args.root_path
     MODEL_PATH = args.model_path
     LOG = args.log
+    LOSS_FUC=args.loss_fuc
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
     sess = tf.Session(config=config)

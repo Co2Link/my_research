@@ -5,13 +5,15 @@ from keras.optimizers import Adam
 from agents.agent import Agent, Student
 import tensorflow as tf
 from keras import backend as K
-from keras.losses import kullback_leibler_divergence, mean_squared_error
 
 
 def kullback_leibler_divergence(y_true, y_pred):
-    tau = 0.01
+    tau = 0.1
 
-    return K.sum(K.softmax(y_true / tau) * K.log(K.softmax(y_true / tau) / K.softmax(y_pred)), axis=-1)
+    y_true = K.softmax(y_true / tau)
+    y_pred = K.softmax(y_pred)
+
+    return K.sum(y_true * K.log(y_true / y_pred), axis=-1)
 
 
 class Student_():
@@ -79,7 +81,7 @@ class Student_():
 class SingleDtStudent(Student):
     """ distill from single teacher """
 
-    def __init__(self, env, lr, logger, batch_size, epsilon, teacher, add_mem_num, update_num, epoch):
+    def __init__(self, env, lr, logger, batch_size, epsilon, teacher, add_mem_num, update_num, epoch, loss_fuc):
         super().__init__(env, logger)
 
         self.batch_size = batch_size
@@ -95,9 +97,14 @@ class SingleDtStudent(Student):
 
         self.epoch = epoch
 
+        assert loss_fuc in ['mse', 'kld'], "Not supported loss function"
+
+        if loss_fuc == 'kld':
+            loss_fuc = kullback_leibler_divergence
+
         # build model
         self.model = self.build_CNN_model(self.state_shape, self.action_num, "student")
-        self.model.compile(optimizer=Adam(lr), loss=kullback_leibler_divergence)
+        self.model.compile(optimizer=Adam(lr), loss=loss_fuc)
 
         # set logger
         if logger is not None:
@@ -139,8 +146,8 @@ if __name__ == '__main__':
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    a=np.array([[1,2,3,4,5]]).astype(np.float32)
-    b=K.softmax(a)
-    c=sess.run(b)
+    a = np.array([[1, 2, 3, 4, 5]]).astype(np.float32)
+    b = K.softmax(a)
+    c = sess.run(b)
 
     print(c)
