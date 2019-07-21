@@ -9,6 +9,9 @@ from abc import ABCMeta, abstractmethod
 
 class ModelBuilder:
 
+    def __init__(self):
+        self.model_file_name = None
+
     def build_FC_model(self, input_shape, output_num, name=""):
         """ build fully connected network """
         model = Sequential()
@@ -38,11 +41,22 @@ class ModelBuilder:
     def save_model(self, info, file_name='model'):
         if os.path.exists(file_name + "_" + str(info) + ".h5f"):
             os.remove(file_name + "_" + str(info) + ".h5f")
-        self.model.save_weights(file_name + "_" + str(info) + ".h5f")
+        save_path = file_name + "_" + str(info) + ".h5f"
+        self.model.save_weights(save_path)
+
+        self.model_file_name = save_path.split('/')[-1]
+
+    def get_model_file_name(self):
+        return self.model_file_name
+
+    def set_model_file_name(self, model_file_name):
+        self.model_file_name = model_file_name
 
 
 class Agent(ModelBuilder, metaclass=ABCMeta):
     def __init__(self, env, logger):
+        super().__init__()
+
         self.state_shape = env.observation_space.shape
 
         self.action_num = env.action_space.n

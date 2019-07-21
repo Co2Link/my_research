@@ -24,9 +24,8 @@ def SingleDistillation_main(logger):
 
     student.distill()
 
-    if logger is not None:
-        logger.save_model(student, 'student_{}'.format(LOSS_FUC))
-        logger.log_total_time_cost()
+    logger.save_model(student, 'student_{}'.format(LOSS_FUC))
+    logger.log_total_time_cost()
 
 
 def Evaluation_main():
@@ -37,14 +36,24 @@ def Evaluation_main():
     student_mse = Teacher('model/student/model_mse.h5f', env)
     student_kld = Teacher('model/student/model_kld.h5f', env)
 
-    Evaluator(env, agent=teacher, info='teacher').evaluate()
-    Evaluator(env, agent=student_mse, info='student_mse').evaluate()
-    Evaluator(env, agent=student_kld, info='student_kld').evaluate()
+    Evaluator(env, agent=teacher).evaluate()
+    Evaluator(env, agent=student_mse).evaluate()
+    Evaluator(env, agent=student_kld).evaluate()
 
 
 def test(logger):
     """ test distillation and evaluation """
+    LEARNING_RATE = 0.0001
+    GAME = 'BreakoutNoFrameskip-v4'
+    BATCH_SIZE = 32
+    EPSILON = 0.05
+    ADD_MEM_NUM = 3000
+    UPDATE_NUM = 200
     EPOCH = 1
+    MEM_SIZE = 50000
+    MODEL_PATH = './model/teacher/breakout-1.h5f'
+    LOSS_FUC = 'mse'
+    EVAL_ITERATION = 5000
 
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
@@ -56,11 +65,14 @@ def test(logger):
 
     student.distill()
 
-    if logger is not None:
-        logger.save_model(student, 'student_{}'.format(LOSS_FUC))
-        logger.log_total_time_cost()
+    logger.save_model(student, 'student_{}'.format(LOSS_FUC))
+    logger.log_total_time_cost()
 
-    Evaluation_main()
+    teacher = Teacher(MODEL_PATH, env)
+    student = Teacher(os.path.join(logger.save_path, 'models', student.model_file_name).replace('\\', '/'), env)
+
+    Evaluator(env, agent=teacher, iteration=EVAL_ITERATION).evaluate()
+    Evaluator(env, agent=student, iteration=EVAL_ITERATION).evaluate()
 
 
 if __name__ == '__main__':
@@ -74,12 +86,12 @@ if __name__ == '__main__':
     parser.add_argument('-ep', '--epoch', type=int, default=20)
     parser.add_argument('--mem_size', type=int, default=int(5e4))
     parser.add_argument('-r', '--root_path', type=str, default='./result_DT')
-    parser.add_argument('--model_path', type=str, default='./model/teacher/breakout.h5f')
+    parser.add_argument('--model_path', type=str, default='./model/teacher/breakout-1.h5f')
     parser.add_argument('--loss_fuc', type=str, default='mse')
-    parser.add_argument('--message', type=str, default='default')
     parser.add_argument('--test', action='store_true')
     parser.add_argument('-eval', '--evaluate', action='store_true')
     parser.add_argument('-dt', '--distillate', action='store_true')
+    parser.add_argument('--eval_iteration', type=int, default=int(1e5))
     args = parser.parse_args()
 
     LEARNING_RATE = args.learning_rate
@@ -93,6 +105,7 @@ if __name__ == '__main__':
     ROOT_PATH = args.root_path
     MODEL_PATH = args.model_path
     LOSS_FUC = args.loss_fuc
+    EVAL_ITERATION = args.eval_iteration
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
     sess = tf.Session(config=config)

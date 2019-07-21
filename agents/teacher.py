@@ -16,6 +16,7 @@ GAME_Pong = 'PongNoFrameskip-v4'  # discrete(6)
 
 class Teacher(Agent):
     """ teacher class which generate memory for student to learn """
+
     def __init__(self, path, env, epsilon=0.05, mem_size=50000):
         """ initiated by a trained model """
         self.env = env
@@ -32,6 +33,8 @@ class Teacher(Agent):
         self.mem_gen = self._memory_generator()
 
         self.eps = epsilon
+
+        self.set_model_file_name(model_file_name=path.split('/')[-1])
 
     def select_action(self, state):
 
@@ -83,7 +86,7 @@ class Teacher(Agent):
         """ return the selected action and the output logit """
 
         state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(np.expand_dims(state,axis=0))
+        output = self.model.predict_on_batch(np.expand_dims(state, axis=0))
 
         return np.argmax(output[0]), output[0]
 
@@ -113,8 +116,6 @@ class Teacher(Agent):
         return np.array(lazyframe)
 
 
-
-
 def DEBUG():
     # keras setup
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0'))
@@ -125,9 +126,10 @@ def DEBUG():
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
     # breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'breakout.h5f'), GAME_Breakout)
-    breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'breakout.h5f'), env)
+    breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'breakout.h5f').replace('\\', '/'), env)
 
     breakout_teacher.play()
+
 
 if __name__ == '__main__':
     DEBUG()

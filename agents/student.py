@@ -6,6 +6,7 @@ from agents.base import Agent
 import tensorflow as tf
 from keras import backend as K
 from tqdm import tqdm
+import os
 
 
 def kullback_leibler_divergence(y_true, y_pred):
@@ -36,8 +37,6 @@ class SingleDtStudent(Agent):
         self.update_num = update_num
 
         self.epoch = epoch
-
-        self.loss_fuc_name = loss_fuc
 
         assert loss_fuc in ['mse', 'kld'], "Not supported loss function"
 

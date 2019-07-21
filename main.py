@@ -32,7 +32,7 @@ def ddqn_main(logger):
 
 
 def test(logger):
-    MAX_ITERATION = 10000
+    MAX_ITERATION = 5000
     LEARNING_RATE = 0.0001
     BATCH_SIZE = 32
     GAMMA = 0.99

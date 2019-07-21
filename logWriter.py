@@ -17,19 +17,19 @@ class LogWriter():
             os.makedirs(self._root)
             print('*** Create result folder ***')
 
-        now_time=time.strftime('%y%m%d_%H%M%S',time.localtime())
-        self.save_path=os.path.join(self._root,now_time)
+        now_time = time.strftime('%y%m%d_%H%M%S', time.localtime())
+        self.save_path = os.path.join(self._root, now_time).replace('\\', '/')
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
             print('*** Create folder: {} ***'.format(self.save_path))
 
-        os.mkdir(os.path.join(self.save_path, "logs"))
-        os.mkdir(os.path.join(self.save_path, "csv"))
-        os.mkdir(os.path.join(self.save_path, "models"))
-        os.mkdir(os.path.join(self.save_path, "movies"))
+        os.mkdir(os.path.join(self.save_path, "logs").replace('\\','/'))
+        os.mkdir(os.path.join(self.save_path, "csv").replace('\\','/'))
+        os.mkdir(os.path.join(self.save_path, "models").replace('\\','/'))
+        os.mkdir(os.path.join(self.save_path, "movies").replace('\\','/'))
 
         self.tb = TensorBoard(
-            log_dir=os.path.join(self.save_path, "logs"),
+            log_dir=os.path.join(self.save_path, "logs").replace('\\','/'),
             histogram_freq=histogram_freq,
             batch_size=batch_size,
             write_graph=write_graph,
@@ -46,7 +46,7 @@ class LogWriter():
         self.iteration = 1
 
     def get_movie_pass(self):
-        return os.path.join(self.save_path, "movies")
+        return os.path.join(self.save_path, "movies").replace('\\','/')
 
     def add_loss(self, losses):
         # log losses into tensorboard
@@ -58,7 +58,7 @@ class LogWriter():
             self.tb.on_epoch_end(self.batch_id)
 
         # log losses into csv
-        with open(os.path.join(self.save_path, 'csv', 'loss.csv'), 'a', newline='') as f:
+        with open(os.path.join(self.save_path, 'csv', 'loss.csv').replace('\\','/'), 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([self.batch_id, *losses])
 
@@ -67,7 +67,7 @@ class LogWriter():
     def set_loss_name(self, names):
         """ set the first row for loss.csv """
         self.loss_names = names
-        with open(os.path.join(self.save_path, 'csv', 'loss.csv'), 'w', newline='') as f:
+        with open(os.path.join(self.save_path, 'csv', 'loss.csv').replace('\\','/'), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(self.loss_names)
 
@@ -86,18 +86,18 @@ class LogWriter():
         if self.max_reward < reward:
             self.max_reward = reward
 
-        with open(os.path.join(self.save_path,'csv','max_reward.csv'),'a',newline='') as f:
-            writer=csv.writer(f)
+        with open(os.path.join(self.save_path, 'csv', 'max_reward.csv').replace('\\','/'), 'a', newline='') as f:
+            writer = csv.writer(f)
             summary = tf.Summary()
             summary.value.add(tag="max_episode_reward", simple_value=self.max_reward)
             for i in range(info['steps']):
-                iteration=self.iteration - info['steps'] + i
+                iteration = self.iteration - info['steps'] + i
                 self.tb.writer.add_summary(summary, iteration)
-                writer.writerow((iteration,self.max_reward))
+                writer.writerow((iteration, self.max_reward))
             self.tb.writer.flush()
 
         # log episode_reward
-        with open(os.path.join(self.save_path, 'csv', 'reward.csv'), 'a', newline='') as f:
+        with open(os.path.join(self.save_path, 'csv', 'reward.csv').replace('\\','/'), 'a', newline='') as f:
 
             # log episode_reward into tensorboard
             summary = tf.Summary()
@@ -114,21 +114,21 @@ class LogWriter():
         self.iteration += 1
 
     def save_model(self, agent, info):
-        agent.save_model(info, os.path.join(self.save_path, 'models', 'model'))
+        agent.save_model(info, os.path.join(self.save_path, 'models', 'model').replace('\\','/'))
 
     def set_model(self, model):
         self.tb.set_model(model)
 
     def save_setting(self, args):
-        with open(os.path.join(self.save_path, 'setting.csv'), 'w',newline='') as f:
+        with open(os.path.join(self.save_path, 'setting.csv').replace('\\','/'), 'w', newline='') as f:
             writer = csv.writer(f)
             for k, v in vars(args).items():
                 writer.writerow((k, v))
-                print(k,v)
+                print(k, v)
 
     def log_total_time_cost(self):
         """ Call it at the end of the code """
-        with open(os.path.join(self.save_path, 'setting.csv'), 'a',newline='') as f:
+        with open(os.path.join(self.save_path, 'setting.csv').replace('\\','/'), 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(('total_time_cost', time.time() - self.start_time))
-            print('*** total_time_cost:{} ***'.format(time.time()-self.start_time))
+            print('*** total_time_cost:{} ***'.format(time.time() - self.start_time))

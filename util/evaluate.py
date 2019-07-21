@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 class Evaluator:
     """ used for evaluating agent """
-    def __init__(self, env, agent, info='default', epsilon=0.05, iteration=10000):
+    def __init__(self, env, agent, epsilon=0.05, iteration=10000):
         self.env = env
 
         self.agent = agent
@@ -14,8 +14,6 @@ class Evaluator:
         self.eps = epsilon
 
         self.iter = iteration
-
-        self.info = info
 
         self.ep_rewards = []
 
@@ -53,7 +51,7 @@ class Evaluator:
 
         # return the average reward
         avg_ep_reward = sum(self.ep_rewards) / len(self.ep_rewards)
-        print("*** avg_ep_reward of {}: {} ***".format(self.info, avg_ep_reward))
+        print("*** avg_ep_reward of {}: {} ***".format(self.agent.model_file_name, avg_ep_reward))
 
         self.write_rewards()
 
@@ -61,7 +59,7 @@ class Evaluator:
 
     def write_rewards(self):
 
-        with open(os.path.join(self.save_path, 'reward_{}.csv'.format(self.info)), 'w', newline='') as f:
+        with open(os.path.join(self.save_path, 'reward_{}.csv'.format(self.agent.model_file_name)).replace('\\','/'), 'w', newline='') as f:
             writer = csv.writer(f)
 
             for ep_reward in self.ep_rewards:
