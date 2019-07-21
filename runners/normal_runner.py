@@ -6,14 +6,14 @@ import time
 
 
 class Normal_runner(RL_runner):
-    def __init__(self, eps_start=1.0, eps_end=0.01, eps_step=1e5, logger=None, render=False,save_model_interval=100):
+    def __init__(self, eps_start=1.0, eps_end=0.01, eps_step=1e5, logger=None, render=False, save_model_interval=100):
         super().__init__(logger)
 
         self.eps_start = eps_start
         self.eps_end = eps_end
         self.eps_step = float(eps_step)
         self.render = render
-        self.save_model_interval=save_model_interval
+        self.save_model_interval = save_model_interval
 
     def traj_generator(self, agent, env):
         """ generate trajectory """
@@ -57,7 +57,7 @@ class Normal_runner(RL_runner):
 
                 # log
                 if self.logger is not None:
-                    if self.episode%self.save_model_interval==0:
+                    if self.episode % self.save_model_interval == 0:
                         self.logger.save_model(agent, self.episode)
 
                     self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
@@ -65,7 +65,7 @@ class Normal_runner(RL_runner):
                 else:
                     print("{} : {}, steps : {}, epsilon : {}".format(self.episode, episode_reward, epi_step,
                                                                      self.eps_start + (
-                                                                                 self.eps_end - self.eps_start) * fraction))
+                                                                             self.eps_end - self.eps_start) * fraction))
 
                 self.episode += 1
                 epi_step = 0
@@ -97,9 +97,10 @@ class Normal_runner(RL_runner):
                 if i % target_update_interval == 0:
                     agent.target_update()
 
-            if i % 1000 == 0:
+            if i % 1000 == 0 and i != 0:
                 # check time cost
-                print("1e3 iteration cost: {}, memory size: {}".format(time.time() - start_time,agent.memory_size()))
+                print("*** 1e3 iteration cost: {:.5f}, memory size: {:,}, *** ,Progress: {:.2f}% ***".format(
+                    time.time() - start_time, agent.memory_size(), i * 100 / max_iter))
                 start_time = time.time()
 
 

@@ -1,13 +1,13 @@
 import random
 import numpy as np
 
-from keras.optimizers import Adam,RMSprop
+from keras.optimizers import Adam, RMSprop
 from keras import backend as K
 import tensorflow as tf
 
 from util.ringbuf import RingBuf
 from util.env_util import gather_numpy, scatter_numpy
-from agents.agent import Agent
+from agents.base import Agent
 
 import time
 
@@ -27,7 +27,8 @@ class DDQN(Agent):
     almost the same implementation as the DQN-paper( Human-Level... )
     except this implementation has Double-Q-Learning and a different optimizer
     """
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size,scale):
+
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale):
         super().__init__(env, logger)
 
         self.batch_size = batch_size
@@ -37,11 +38,9 @@ class DDQN(Agent):
         self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
         self.model.compile(optimizer=Adam(lr), loss=huberloss)
         self.target.compile(optimizer=Adam(lr), loss="mse")
-        # self.model.compile(optimizer=RMSprop(lr,0.95,0.01),loss=huberloss)
-        # self.target.compile(optimizer=RMSprop(lr,0.95,0.01),loss="mse")
         self.max_memory_size = int(memory_size)
         self.gamma = gamma
-        self.scale=scale
+        self.scale = scale
 
         if logger is not None:
             logger.set_model(self.model)
@@ -111,7 +110,7 @@ class DDQN(Agent):
         if self.scale:
             return np.array(LazyFrame)
         else:
-            return np.array(LazyFrame).astype(np.float32)/255.0
+            return np.array(LazyFrame).astype(np.float32) / 255.0
 
     def memory_size(self):
         return len(self.s_memory)

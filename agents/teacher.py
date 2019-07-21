@@ -6,20 +6,22 @@ from atari_wrappers import wrap_deepmind, make_atari
 import tensorflow as tf
 from keras import backend as K
 from collections import deque
+from agents.base import Agent
 
-MODEL_PATH = '../teacher'
+MODEL_PATH = '../model/teacher'
 GAME_Breakout = 'BreakoutNoFrameskip-v4'  # discrete(4)
 GAME_Qbert = 'QbertNoFrameskip-v4'  # discrete(6)
 GAME_Pong = 'PongNoFrameskip-v4'  # discrete(6)
 
 
-class Teacher():
+class Teacher(Agent):
+    """ teacher class which generate memory for student to learn """
     def __init__(self, path, env, epsilon=0.05, mem_size=50000):
-
+        """ initiated by a trained model """
         self.env = env
 
         # load model
-        model = self.build_model(input_shape=self.env.observation_space.shape, output_num=self.env.action_space.n)
+        model = self.build_CNN_model(input_shape=self.env.observation_space.shape, output_num=self.env.action_space.n)
         model.load_weights(path)
         self.model = model
 
@@ -31,21 +33,6 @@ class Teacher():
 
         self.eps = epsilon
 
-    def build_model(self, input_shape, output_num, name="defalut"):
-        """ build CNN network """
-        inputs = Input(shape=input_shape)
-
-        x = Conv2D(filters=32, kernel_size=(8, 8), strides=(4, 4), activation="relu", name=(name + "_conv2D_1"))(inputs)
-        x = Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2), activation="relu", name=(name + "_conv2D_2"))(x)
-        x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), activation="relu", name=(name + "_conv2D_3"))(x)
-
-        x = Flatten()(x)
-        x = Dense(512, activation="relu", name=(name + "_dense"))(x)
-
-        q = Dense(output_num, activation='linear', name="q")(x)
-
-        return Model(inputs, q)
-
     def select_action(self, state):
 
         return self._select_action_output_logit(state)[0]
@@ -56,7 +43,7 @@ class Teacher():
             state, output = next(self.mem_gen)
             self.s_m.append(state)
             self.o_m.append(output)
-        print("* add {} memories,memory size: {} *".format(size, self.get_memory_size()))
+        print("*** add {} memories,memory size: {} ***".format(size, self.get_memory_size()))
 
     def get_memory_size(self):
         return len(self.s_m)
@@ -72,6 +59,7 @@ class Teacher():
         return s_batch, o_batch
 
     def play(self):
+        """ play the game to make sure model work fine """
         state = self.env.reset()
 
         while True:
@@ -95,7 +83,7 @@ class Teacher():
         """ return the selected action and the output logit """
 
         state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(np.array([state]))
+        output = self.model.predict_on_batch(np.expand_dims(state,axis=0))
 
         return np.argmax(output[0]), output[0]
 
@@ -124,8 +112,7 @@ class Teacher():
     def _LazyFrame2array(self, lazyframe):
         return np.array(lazyframe)
 
-    def __str__(self):
-        return self.game_name
+
 
 
 def DEBUG():
@@ -134,14 +121,13 @@ def DEBUG():
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    env=make_atari(GAME_Breakout)
-    env=wrap_deepmind(env,frame_stack=True,scale=True)
+    env = make_atari(GAME_Breakout)
+    env = wrap_deepmind(env, frame_stack=True, scale=True)
 
     # breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'breakout.h5f'), GAME_Breakout)
-    breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'model_-1.h5f'),env)
+    breakout_teacher = Teacher(os.path.join(MODEL_PATH, 'breakout.h5f'), env)
 
     breakout_teacher.play()
-
 
 if __name__ == '__main__':
     DEBUG()

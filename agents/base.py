@@ -20,7 +20,7 @@ class ModelBuilder:
         return model
 
     # expect input shape of (N,H,W,C)
-    def build_CNN_model(self, input_shape, output_num, name=""):
+    def build_CNN_model(self, input_shape, output_num, name="default"):
         """ build CNN network """
         inputs = Input(shape=input_shape)
 
@@ -35,10 +35,10 @@ class ModelBuilder:
 
         return Model(inputs, q)
 
-    def save_model(self, episode, file_name='model'):
-        if os.path.exists(file_name + "_" + str(episode - 1) + ".h5f"):
-            os.remove(file_name + "_" + str(episode - 1) + ".h5f")
-        self.model.save_weights(file_name + "_" + str(episode) + ".h5f")
+    def save_model(self, info, file_name='model'):
+        if os.path.exists(file_name + "_" + str(info) + ".h5f"):
+            os.remove(file_name + "_" + str(info) + ".h5f")
+        self.model.save_weights(file_name + "_" + str(info) + ".h5f")
 
 
 class Agent(ModelBuilder, metaclass=ABCMeta):
@@ -51,31 +51,7 @@ class Agent(ModelBuilder, metaclass=ABCMeta):
 
         self.logger = logger
 
-    @abstractmethod
-    def learn(self):
-        pass
-
-    @abstractmethod
-    def select_action(self, state):
-        pass
-
-
-class Student(ModelBuilder, metaclass=ABCMeta):
-    def __init__(self, env, logger):
-        self.state_shape = env.observation_space.shape
-
-        self.action_num = env.action_space.n
-
-        print("state_shape: {}, action_num: {}".format(self.state_shape, self.action_num))
-
-        self.logger = logger
-
-        # target environment
         self.env = env
-
-    @abstractmethod
-    def distill(self):
-        pass
 
     @abstractmethod
     def select_action(self, state):

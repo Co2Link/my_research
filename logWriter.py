@@ -91,7 +91,7 @@ class LogWriter():
             summary = tf.Summary()
             summary.value.add(tag="max_episode_reward", simple_value=self.max_reward)
             for i in range(info['steps']):
-                iteration=self.iteration - info['steps'] + i + 1
+                iteration=self.iteration - info['steps'] + i
                 self.tb.writer.add_summary(summary, iteration)
                 writer.writerow((iteration,self.max_reward))
             self.tb.writer.flush()
@@ -113,8 +113,8 @@ class LogWriter():
         """ count the iteration """
         self.iteration += 1
 
-    def save_model(self, agent, episode):
-        agent.save_model(episode, os.path.join(self.save_path, 'models', 'model'))
+    def save_model(self, agent, info):
+        agent.save_model(info, os.path.join(self.save_path, 'models', 'model'))
 
     def set_model(self, model):
         self.tb.set_model(model)
@@ -132,4 +132,3 @@ class LogWriter():
             writer = csv.writer(f)
             writer.writerow(('total_time_cost', time.time() - self.start_time))
             print('*** total_time_cost:{} ***'.format(time.time()-self.start_time))
-

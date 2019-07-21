@@ -20,7 +20,44 @@ def ddqn_main(logger):
 
     runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL)
 
-    ddqn_agent = DDQN(env, LEARNUNG_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
+
+    runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
+
+    if logger is not None:
+        # Save the final model
+        logger.save_model(ddqn_agent, -1)
+        # Record the total used time
+        logger.log_total_time_cost()
+
+
+def test(logger):
+    MAX_ITERATION = 10000
+    LEARNING_RATE = 0.0001
+    BATCH_SIZE = 32
+    GAMMA = 0.99
+    EPS_START = 1.0
+    EPS_END = 0.1
+    EPS_STEP = 1000
+    MAX_MEM_LEN = 1000
+    WARMUP = 1000
+    TARGET_UPDATE = 1000
+    SAVE_MODEL_INTERVAL = 100
+    RENDER = False
+    GAME = 'BreakoutNoFrameskip-v4'
+    SCALE = True
+
+    # make environment
+    env = make_atari(GAME)
+
+    if logger is not None:
+        env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
+
+    env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
+
+    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL)
+
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
 
     runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
 
@@ -50,13 +87,12 @@ if __name__ == '__main__':
     parser.add_argument('--root', type=str, default="./result")
     parser.add_argument('--test', action="store_true")
     parser.add_argument('--render', action="store_true")
-    parser.add_argument('--log', action="store_true")
     parser.add_argument('--game', type=str, default='BreakoutNoFrameskip-v4')
     parser.add_argument('--no_scale', action="store_false")
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
-    LEARNUNG_RATE = args.learning_rate
+    LEARNING_RATE = args.learning_rate
     BATCH_SIZE = args.batchsize
     GAMMA = args.gamma
     EPS_START = args.eps_start
@@ -67,7 +103,6 @@ if __name__ == '__main__':
     TARGET_UPDATE = args.target_update
     SAVE_MODEL_INTERVAL = args.save_model_interval
     RENDER = args.render
-    LOG = args.log
     GAME = args.game
     SCALE = args.no_scale
     ROOT_PATH = args.root
@@ -76,12 +111,10 @@ if __name__ == '__main__':
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    if LOG:
-        logger = LogWriter(ROOT_PATH, BATCH_SIZE)
-        logger.save_setting(args)
+    logger = LogWriter(ROOT_PATH, BATCH_SIZE)
+    logger.save_setting(args)
+
+    if args.test:
+        test(logger)
     else:
-        logger = None
-
-    ddqn_main(logger)
-
-    print("total time cost: {}".format(time.time() - start_time))
+        ddqn_main(logger)
