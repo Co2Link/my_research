@@ -133,7 +133,7 @@ class Teacher(Agent):
 
         ep_reward = 0
 
-        for i in tqdm(range(self.iter)):
+        for i in tqdm(range(self.iter),ascii=True):
 
             if self.eps <= np.random.uniform(0, 1):
                 action = self.select_action(state)

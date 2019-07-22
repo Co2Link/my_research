@@ -1,7 +1,4 @@
 import argparse
-from gym import wrappers
-from agents.ddqn import DDQN
-from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
 from keras import backend as K
 import tensorflow as tf
@@ -15,7 +12,11 @@ from agents.student import SingleDtStudent
 from agents.evaluator import Evaluator
 
 
-def SingleDistillation_main(logger):
+def SingleDistillation_main():
+
+    logger = LogWriter(ROOT_PATH, BATCH_SIZE)
+    logger.save_setting(args)
+
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
@@ -56,7 +57,7 @@ def Evaluation():
         Evaluator(env, log_path.replace('\\', '/'), eval_iteration=EVAL_ITERATION).evaluate()
 
 
-def test(logger):
+def test():
     """ test distillation and evaluation """
     LEARNING_RATE = 0.0001
     GAME = 'BreakoutNoFrameskip-v4'
@@ -69,6 +70,9 @@ def test(logger):
     MODEL_PATH = './model/teacher/breakout-1.h5f'
     LOSS_FUC = 'mse'
     EVAL_ITERATION = 3000
+
+    logger = LogWriter(ROOT_PATH, BATCH_SIZE)
+    logger.save_setting(args)
 
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
@@ -127,12 +131,11 @@ if __name__ == '__main__':
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    logger = LogWriter(ROOT_PATH, BATCH_SIZE)
-    logger.save_setting(args)
+
 
     if args.test:
-        test(logger)
+        test()
     elif args.distillate:
-        SingleDistillation_main(logger)
+        SingleDistillation_main()
     elif args.evaluate:
         Evaluation()
