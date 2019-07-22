@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 class Evaluator:
     """ used for evaluating agent """
+
     def __init__(self, env, agent, epsilon=0.05, iteration=10000):
         self.env = env
 
@@ -59,8 +60,22 @@ class Evaluator:
 
     def write_rewards(self):
 
-        with open(os.path.join(self.save_path, 'reward_{}.csv'.format(self.agent.model_file_name)).replace('\\','/'), 'w', newline='') as f:
+        # get rid of the file suffix
+        file_name = ''.join(self.agent.model_file_name.split('.')[0])
+
+        with open(os.path.join(self.save_path, 'reward_{}.csv'.format(file_name)).replace('\\', '/'), 'w',
+                  newline='') as f:
             writer = csv.writer(f)
 
             for ep_reward in self.ep_rewards:
                 writer.writerow((ep_reward,))
+
+
+if __name__ == '__main__':
+    file_name = 'model_student_kld.h5f'
+
+    print(file_name)
+    a = file_name.split('.')[0]
+    print(a)
+    file_name = ''.join(a)
+    print(file_name)
