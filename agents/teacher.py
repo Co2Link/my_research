@@ -1,7 +1,7 @@
 import numpy as np
 import os
-from keras.layers import Flatten, Conv2D, Input, Dense
-from keras.models import Model
+import csv
+from tqdm import tqdm
 from atari_wrappers import wrap_deepmind, make_atari
 import tensorflow as tf
 from keras import backend as K
@@ -17,13 +17,14 @@ GAME_Pong = 'PongNoFrameskip-v4'  # discrete(6)
 class Teacher(Agent):
     """ teacher class which generate memory for student to learn """
 
-    def __init__(self, path, env, epsilon=0.05, mem_size=50000):
+    def __init__(self, model_path, env, epsilon=0.05, mem_size=50000, eval_iteration=10000):
+        super().__init__(env, None)
         """ initiated by a trained model """
         self.env = env
 
         # load model
-        model = self.build_CNN_model(input_shape=self.env.observation_space.shape, output_num=self.env.action_space.n)
-        model.load_weights(path)
+        model = self.build_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
+        model.load_weights(model_path)
         self.model = model
 
         # Memory
@@ -34,7 +35,17 @@ class Teacher(Agent):
 
         self.eps = epsilon
 
-        self.set_model_file_name(model_file_name=path.split('/')[-1])
+        self.iter = eval_iteration
+
+        self.ep_rewards = []
+
+        self.save_path = 'result_EVAL'
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+            print("*** make directory {} ***".format(self.save_path))
+
+        # get model_file_name from model_path
+        self.model_file_name = model_path.split('/')[-1]
 
     def select_action(self, state):
 
@@ -86,9 +97,9 @@ class Teacher(Agent):
         """ return the selected action and the output logit """
 
         state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(np.expand_dims(state, axis=0))
+        output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
 
-        return np.argmax(output[0]), output[0]
+        return np.argmax(output), output
 
     def _memory_generator(self):
 
@@ -114,6 +125,54 @@ class Teacher(Agent):
 
     def _LazyFrame2array(self, lazyframe):
         return np.array(lazyframe)
+
+    def evaluate(self):
+        print("*** Evaluating: {} ***".format(self.model_file_name))
+
+        state = self.env.reset()
+
+        ep_reward = 0
+
+        for i in tqdm(range(self.iter)):
+
+            if self.eps <= np.random.uniform(0, 1):
+                action = self.select_action(state)
+            else:
+                action = self.env.action_space.sample()
+
+            state_, reward, done, _ = self.env.step(action)
+
+            ep_reward += reward
+
+            if done:
+                state_ = self.env.reset()
+
+                # log ep_reward
+                self.ep_rewards.append(ep_reward)
+                ep_reward = 0
+
+            state = state_
+
+        # return the average reward
+        avg_ep_reward = sum(self.ep_rewards) / len(self.ep_rewards)
+        print("*** avg_ep_reward of {}: {} ***".format(self.model_file_name, avg_ep_reward))
+
+        self.write_rewards()
+
+        return avg_ep_reward
+
+    def write_rewards(self):
+
+        # get rid of the file suffix
+        file_name = ''.join(self.model_file_name.split('.')[0])
+
+        with open(os.path.join(self.save_path, 'reward_{}.csv'.format(file_name)).replace('\\', '/'),
+                  'w',
+                  newline='') as f:
+            writer = csv.writer(f)
+
+            for ep_reward in self.ep_rewards:
+                writer.writerow((ep_reward,))
 
 
 def DEBUG():

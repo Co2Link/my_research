@@ -43,14 +43,7 @@ class ModelBuilder:
             os.remove(file_name + "_" + str(info) + ".h5f")
         save_path = file_name + "_" + str(info) + ".h5f"
         self.model.save_weights(save_path)
-
         self.model_file_name = save_path.split('/')[-1]
-
-    def get_model_file_name(self):
-        return self.model_file_name
-
-    def set_model_file_name(self, model_file_name):
-        self.model_file_name = model_file_name
 
 
 class Agent(ModelBuilder, metaclass=ABCMeta):
@@ -60,8 +53,6 @@ class Agent(ModelBuilder, metaclass=ABCMeta):
         self.state_shape = env.observation_space.shape
 
         self.action_num = env.action_space.n
-
-        print("state_shape: {}, action_num: {}".format(self.state_shape, self.action_num))
 
         self.logger = logger
 

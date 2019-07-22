@@ -61,8 +61,8 @@ class DDQN(Agent):
 
     def select_action(self, state):
         state = self.LazyFrame2array(state)
-        a = self.model.predict_on_batch(np.array([state]))
-        return np.argmax(a[0])
+        output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
+        return np.argmax(output)
 
     def target_update(self):
         """ Update target network """

@@ -78,9 +78,8 @@ class SingleDtStudent(Agent):
 
     def select_action(self, state):
         state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(np.expand_dims(state, axis=0))
-
-        return np.argmax(output[0])
+        output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
+        return np.argmax(output)
 
     def _LazyFrame2array(self, LazyFrame):
         return np.array(LazyFrame)

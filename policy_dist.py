@@ -6,11 +6,13 @@ from logWriter import LogWriter
 from keras import backend as K
 import tensorflow as tf
 import time
+import glob
+import csv
 from atari_wrappers import *
 
 from agents.teacher import Teacher
 from agents.student import SingleDtStudent
-from util.evaluate import Evaluator
+from agents.evaluator import Evaluator
 
 
 def SingleDistillation_main(logger):
@@ -28,17 +30,30 @@ def SingleDistillation_main(logger):
     logger.log_total_time_cost()
 
 
-def Evaluation_main():
+def Evaluation():
+    """
+    evaluation the performance of both teacher and students under Single-target-distillation situation
+    there should be only one model file and csv file under the directory of './model/teacher'
+    multiple log directory under path of './result_DT'
+    """
+
+    # get the game_name from setting.csv
+    with open(glob.glob('./model/teacher/*.csv')[0]) as f:
+        reader = csv.reader(f)
+        settings_dict = {row[0]: row[1] for row in reader}
+    game_name = settings_dict['game']
+    print("*** GAME of teacher:{} ***".format(game_name))
+
+    # make environment
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
-    teacher = Teacher('model/teacher/breakout.h5f', env)
-    student_mse = Teacher('model/student/model_mse.h5f', env)
-    student_kld = Teacher('model/student/model_kld.h5f', env)
+    # evaluate teacher
+    Teacher(glob.glob('./model/teacher/*.h5f')[0].replace('\\', '/'), env, eval_iteration=EVAL_ITERATION).evaluate()
 
-    Evaluator(env, agent=teacher).evaluate()
-    Evaluator(env, agent=student_mse).evaluate()
-    Evaluator(env, agent=student_kld).evaluate()
+    # evaluate student
+    for log_path in glob.glob('./result_DT/*'):
+        Evaluator(env, log_path.replace('\\', '/'), eval_iteration=EVAL_ITERATION).evaluate()
 
 
 def test(logger):
@@ -53,12 +68,12 @@ def test(logger):
     MEM_SIZE = 50000
     MODEL_PATH = './model/teacher/breakout-1.h5f'
     LOSS_FUC = 'mse'
-    EVAL_ITERATION = 5000
+    EVAL_ITERATION = 3000
 
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
-    teacher = Teacher(MODEL_PATH, env, EPSILON, MEM_SIZE)
+    teacher = Teacher(MODEL_PATH, env, EPSILON, MEM_SIZE, EVAL_ITERATION)
 
     student = SingleDtStudent(env, LEARNING_RATE, logger, BATCH_SIZE, EPSILON, teacher, ADD_MEM_NUM, UPDATE_NUM, EPOCH,
                               LOSS_FUC)
@@ -68,11 +83,12 @@ def test(logger):
     logger.save_model(student, 'student_{}'.format(LOSS_FUC))
     logger.log_total_time_cost()
 
-    teacher = Teacher(MODEL_PATH, env)
-    student = Teacher(os.path.join(logger.save_path, 'models', student.model_file_name).replace('\\', '/'), env)
+    # evaluate teacher
+    teacher.evaluate()
 
-    Evaluator(env, agent=teacher, iteration=EVAL_ITERATION).evaluate()
-    Evaluator(env, agent=student, iteration=EVAL_ITERATION).evaluate()
+    # evaluate student
+    for log_path in glob.glob('./result_DT/*'):
+        Evaluator(env, log_path, eval_iteration=EVAL_ITERATION).evaluate()
 
 
 if __name__ == '__main__':
@@ -119,4 +135,4 @@ if __name__ == '__main__':
     elif args.distillate:
         SingleDistillation_main(logger)
     elif args.evaluate:
-        Evaluation_main()
+        Evaluation()
