@@ -3,3 +3,4 @@ logs/
 models/
 movie_folder*
 .vscode/*
+*.pyc

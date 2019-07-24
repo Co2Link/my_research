@@ -11,11 +11,13 @@ class ModelBuilder:
 
     def __init__(self):
         self.model_file_name = None
+        self.model = None
 
     def build_FC_model(self, input_shape, output_num, name=""):
         """ build fully connected network """
         model = Sequential()
-        model.add(Dense(10, activation="relu", name=(name + "_dense1"), input_shape=(None, input_shape)))
+        model.add(Dense(10, activation="relu", name=(
+            name + "_dense1"), input_shape=(None, input_shape)))
         model.add(Dense(10, activation="relu", name=(name + "_dense2")))
         model.add(Dense(10, activation="relu", name=(name + "_dense3")))
         model.add(Dense(output_num, activation="linear", name=(name + "q")))
@@ -27,9 +29,12 @@ class ModelBuilder:
         """ build CNN network """
         inputs = Input(shape=input_shape)
 
-        x = Conv2D(filters=32, kernel_size=(8, 8), strides=(4, 4), activation="relu", name=(name + "_conv2D_1"))(inputs)
-        x = Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2), activation="relu", name=(name + "_conv2D_2"))(x)
-        x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), activation="relu", name=(name + "_conv2D_3"))(x)
+        x = Conv2D(filters=32, kernel_size=(8, 8), strides=(4, 4),
+                   activation="relu", name=(name + "_conv2D_1"))(inputs)
+        x = Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2),
+                   activation="relu", name=(name + "_conv2D_2"))(x)
+        x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1),
+                   activation="relu", name=(name + "_conv2D_3"))(x)
 
         x = Flatten()(x)
         x = Dense(512, activation="relu", name=(name + "_dense"))(x)
