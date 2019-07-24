@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import csv
+import time
 from tqdm import tqdm
 from atari_wrappers import wrap_deepmind, make_atari
 import tensorflow as tf
@@ -38,11 +39,6 @@ class Teacher(Agent):
         self.iter = eval_iteration
 
         self.ep_rewards = []
-
-        self.save_path = 'result_EVAL'
-        if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
-            print("*** make directory {} ***".format(self.save_path))
 
         # get model_file_name from model_path
         self.model_file_name = model_path.split('/')[-1]
@@ -126,7 +122,7 @@ class Teacher(Agent):
     def _LazyFrame2array(self, lazyframe):
         return np.array(lazyframe)
 
-    def evaluate(self):
+    def evaluate(self,save_path):
         print("*** Evaluating: {} ***".format(self.model_file_name))
 
         state = self.env.reset()
@@ -157,16 +153,16 @@ class Teacher(Agent):
         avg_ep_reward = sum(self.ep_rewards) / len(self.ep_rewards)
         print("*** avg_ep_reward of {}: {} ***".format(self.model_file_name, avg_ep_reward))
 
-        self.write_rewards()
+        self.write_rewards(save_path)
 
         return avg_ep_reward
 
-    def write_rewards(self):
+    def write_rewards(self,save_path):
 
         # get rid of the file suffix
         file_name = ''.join(self.model_file_name.split('.')[0])
 
-        with open(os.path.join(self.save_path, 'reward_{}.csv'.format(file_name)).replace('\\', '/'),
+        with open(os.path.join(save_path, 'reward_{}.csv'.format(file_name)).replace('\\', '/'),
                   'w',
                   newline='') as f:
             writer = csv.writer(f)

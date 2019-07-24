@@ -5,7 +5,8 @@ import tensorflow as tf
 import time
 import glob
 import csv
-from atari_wrappers import *
+import os
+from atari_wrappers import make_atari,wrap_deepmind
 
 from agents.teacher import Teacher
 from agents.student import SingleDtStudent
@@ -49,12 +50,23 @@ def Evaluation():
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
+    # log
+    root='result_EVAL'
+    if not os.path.exists(root):
+        os.mkdir(root)
+        print('*** Create folder: {} ***'.format(root))
+    now_time = time.strftime('%y%m%d_%H%M%S', time.localtime())
+    save_path = os.path.join(root, now_time).replace('\\', '/')
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+        print('*** Create folder: {} ***'.format(save_path))
+
     # evaluate teacher
-    Teacher(glob.glob('./model/teacher/*.h5f')[0].replace('\\', '/'), env, eval_iteration=EVAL_ITERATION).evaluate()
+    Teacher(glob.glob('./model/teacher/*.h5f')[0].replace('\\', '/'), env, eval_iteration=EVAL_ITERATION).evaluate(save_path)
 
     # evaluate student
     for log_path in glob.glob('./result_DT/*'):
-        Evaluator(env, log_path.replace('\\', '/'), eval_iteration=EVAL_ITERATION).evaluate()
+        Evaluator(env, log_path.replace('\\', '/'),save_path,eval_iteration=EVAL_ITERATION).evaluate()
 
 
 def test():
@@ -87,12 +99,24 @@ def test():
     logger.save_model(student, 'student_{}'.format(LOSS_FUC))
     logger.log_total_time_cost()
 
+    # log
+    root='result_EVAL'
+    if not os.path.exists(root):
+        os.mkdir(root)
+        print('*** Create folder: {} ***'.format(root))
+    now_time = time.strftime('%y%m%d_%H%M%S', time.localtime())
+    save_path = os.path.join(root, now_time).replace('\\', '/')
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+        print('*** Create folder: {} ***'.format(save_path))
+
+
     # evaluate teacher
-    teacher.evaluate()
+    teacher.evaluate(save_path)
 
     # evaluate student
     for log_path in glob.glob('./result_DT/*'):
-        Evaluator(env, log_path, eval_iteration=EVAL_ITERATION).evaluate()
+        Evaluator(env, log_path,save_path, eval_iteration=EVAL_ITERATION).evaluate()
 
 
 if __name__ == '__main__':

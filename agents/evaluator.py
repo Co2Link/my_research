@@ -3,6 +3,7 @@ import numpy as np
 import csv
 from tqdm import tqdm
 import glob
+import time
 
 from agents.base import Agent
 
@@ -10,7 +11,7 @@ from agents.base import Agent
 class Evaluator(Agent):
     """ used for evaluating student model """
 
-    def __init__(self, env, log_path, epsilon=0.05, eval_iteration=10000):
+    def __init__(self, env, log_path,save_path,epsilon=0.05, eval_iteration=10000):
         """
         Args:
             log_path: path to Log file . eg: "./result_DT/190721_195934"
@@ -19,12 +20,15 @@ class Evaluator(Agent):
         self.env = env
 
         # path to model file
-        model_path = glob.glob(os.path.join(log_path, 'models', '*'))[0].replace('\\', '/')
+        model_path = glob.glob(os.path.join(
+            log_path, 'models', '*'))[0].replace('\\', '/')
         # path to setting.csv file
-        setting_path = glob.glob(os.path.join(log_path, 'setting.csv'))[0].replace('\\', '/')
+        setting_path = glob.glob(os.path.join(log_path, 'setting.csv'))[
+            0].replace('\\', '/')
 
         # load model
-        model = self.build_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
+        model = self.build_CNN_model(
+            input_shape=self.state_shape, output_num=self.action_num)
         model.load_weights(model_path)
         self.model = model
 
@@ -48,10 +52,7 @@ class Evaluator(Agent):
         self.log_file_name = 'reward_{}_{}.csv'.format(model_name, self.epoch)
 
         # log
-        self.save_path = 'result_EVAL'
-        if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
-            print("*** make directory {} ***".format(self.save_path))
+        self.save_path = save_path
 
     def evaluate(self):
 
@@ -61,7 +62,7 @@ class Evaluator(Agent):
 
         ep_reward = 0
 
-        for i in tqdm(range(self.iter),ascii=True):
+        for i in tqdm(range(self.iter), ascii=True):
 
             if self.eps <= np.random.uniform(0, 1):
                 action = self.select_action(state)
@@ -101,7 +102,8 @@ class Evaluator(Agent):
 
     def select_action(self, state):
         state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
+        output = self.model.predict_on_batch(
+            np.expand_dims(state, axis=0)).ravel()
         return np.argmax(output)
 
     def _LazyFrame2array(self, lazyframe):

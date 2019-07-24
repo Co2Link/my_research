@@ -4,3 +4,5 @@ models/
 movie_folder*
 .vscode/*
 *.pyc
+model/
+result*/

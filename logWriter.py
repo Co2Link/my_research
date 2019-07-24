@@ -9,16 +9,16 @@ import tensorflow as tf
 class LogWriter():
     def __init__(self, root, batch_size, histogram_freq=0, write_graph=True, write_grads=False):
 
-        self._root = root
+        self.root = root
 
         self.start_time = time.time()
 
-        if not os.path.exists(root):
-            os.makedirs(self._root)
-            print('*** Create result folder ***')
+        if not os.path.exists(self.root):
+            os.mkdir(self.root)
+            print('*** Create folder: {} ***'.format(self.root))
 
         now_time = time.strftime('%y%m%d_%H%M%S', time.localtime())
-        self.save_path = os.path.join(self._root, now_time).replace('\\', '/')
+        self.save_path = os.path.join(self.root, now_time).replace('\\', '/')
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
             print('*** Create folder: {} ***'.format(self.save_path))
