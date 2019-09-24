@@ -6,3 +6,6 @@ movie_folder*
 *.pyc
 model/
 result*/
+
+# VSCode
+.vscode/
