@@ -1,11 +1,11 @@
 import random
 import numpy as np
+from collections import deque
 
 from keras.optimizers import Adam, RMSprop
 from keras import backend as K
 import tensorflow as tf
 
-from util.ringbuf import RingBuf
 from util.env_util import gather_numpy, scatter_numpy
 from agents.base import Agent
 
@@ -28,7 +28,7 @@ class DDQN(Agent):
     except this implementation has Double-Q-Learning and a different optimizer
     """
 
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale):
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, model_size):
         super().__init__(env, logger)
 
         self.batch_size = batch_size
@@ -47,10 +47,10 @@ class DDQN(Agent):
             logger.set_loss_name([*self.model.metrics_names])
 
         # memory
-        self.s_memory = RingBuf(size=self.max_memory_size)
-        self.a_memory = RingBuf(size=self.max_memory_size)
-        self.r_memory = RingBuf(size=self.max_memory_size)
-        self.ns_memory = RingBuf(size=self.max_memory_size)
+        self.s_memory = deque(maxlen=self.max_memory_size)
+        self.a_memory = deque(maxlen=self.max_memory_size)
+        self.r_memory = deque(maxlen=self.max_memory_size)
+        self.ns_memory = deque(maxlen=self.max_memory_size)
 
     def memorize(self, s, a, r, s_):
         """ Add memory """
