@@ -14,15 +14,31 @@ def ddqn_main(logger):
     env = make_atari(GAME)
 
     if logger is not None:
-        env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
+        env = wrappers.Monitor(
+            env,
+            logger.get_movie_pass(),
+            video_callable=(lambda ep: ep % 100 == 0),
+            force=True,
+        )
 
     env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
 
-    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL)
+    runner = Normal_runner(
+        EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
+    )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
+    ddqn_agent = DDQN(
+        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, IS_SMALL
+    )
 
-    runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
+    runner.train(
+        ddqn_agent,
+        env,
+        MAX_ITERATION,
+        BATCH_SIZE,
+        warmup=WARMUP,
+        target_update_interval=TARGET_UPDATE,
+    )
 
     if logger is not None:
         # Save the final model
@@ -44,22 +60,36 @@ def test(logger):
     TARGET_UPDATE = 1000
     SAVE_MODEL_INTERVAL = 100
     RENDER = False
-    GAME = 'BreakoutNoFrameskip-v4'
+    GAME = "BreakoutNoFrameskip-v4"
     SCALE = True
 
     # make environment
     env = make_atari(GAME)
 
     if logger is not None:
-        env = wrappers.Monitor(env, logger.get_movie_pass(), video_callable=(lambda ep: ep % 100 == 0), force=True)
+        env = wrappers.Monitor(
+            env,
+            logger.get_movie_pass(),
+            video_callable=(lambda ep: ep % 100 == 0),
+            force=True,
+        )
 
     env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
 
-    runner = Normal_runner(EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL)
+    runner = Normal_runner(
+        EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
+    )
 
     ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
 
-    runner.train(ddqn_agent, env, MAX_ITERATION, BATCH_SIZE, warmup=WARMUP, target_update_interval=TARGET_UPDATE)
+    runner.train(
+        ddqn_agent,
+        env,
+        MAX_ITERATION,
+        BATCH_SIZE,
+        warmup=WARMUP,
+        target_update_interval=TARGET_UPDATE,
+    )
 
     if logger is not None:
         # Save the final model
@@ -68,27 +98,28 @@ def test(logger):
         logger.log_total_time_cost()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     start_time = time.time()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-iter', '--max_iteration', type=int, default=int(1e6))
-    parser.add_argument('-b', '--batchsize', type=int, default=32)
-    parser.add_argument('-lr', '--learning_rate', type=float, default=0.0001)
-    parser.add_argument('--gamma', type=float, default=0.99)
-    parser.add_argument('-e_start', '--eps_start', type=float, default=1.0)
-    parser.add_argument('-e_end', '--eps_end', type=float, default=0.1)
-    parser.add_argument('-e_step', '--eps_step', type=int, default=int(1e5))
-    parser.add_argument('-m_len', '--max_mem_len', type=int, default=int(1e4))
-    parser.add_argument('--warmup', type=int, default=int(1e4))
-    parser.add_argument('--target_update', type=int, default=1000)
-    parser.add_argument('-s', '--save_model_interval', type=int, default=100)
-    parser.add_argument('-g', '--gpu', type=str, default="0")
-    parser.add_argument('--root', type=str, default="./result")
-    parser.add_argument('--test', action="store_true")
-    parser.add_argument('--render', action="store_true")
-    parser.add_argument('--game', type=str, default='BreakoutNoFrameskip-v4')
-    parser.add_argument('--no_scale', action="store_false")
+    parser.add_argument("-iter", "--max_iteration", type=int, default=int(1e6))
+    parser.add_argument("-b", "--batchsize", type=int, default=32)
+    parser.add_argument("-lr", "--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--gamma", type=float, default=0.99)
+    parser.add_argument("-e_start", "--eps_start", type=float, default=1.0)
+    parser.add_argument("-e_end", "--eps_end", type=float, default=0.1)
+    parser.add_argument("-e_step", "--eps_step", type=int, default=int(1e5))
+    parser.add_argument("-m_len", "--max_mem_len", type=int, default=int(1e4))
+    parser.add_argument("--warmup", type=int, default=int(1e4))
+    parser.add_argument("--target_update", type=int, default=1000)
+    parser.add_argument("-s", "--save_model_interval", type=int, default=100)
+    parser.add_argument("-g", "--gpu", type=str, default="0")
+    parser.add_argument("--root", type=str, default="./result")
+    parser.add_argument("--test", action="store_true")
+    parser.add_argument("--render", action="store_true")
+    parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
+    parser.add_argument("--no_scale", action="store_false")
+    parser.add_argument("--is_small", action="store_true")
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -106,8 +137,11 @@ if __name__ == '__main__':
     GAME = args.game
     SCALE = args.no_scale
     ROOT_PATH = args.root
+    IS_SMALL = args.is_small
 
-    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu))
+    config = tf.ConfigProto(
+        gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu)
+    )
     sess = tf.Session(config=config)
     K.set_session(sess)
 

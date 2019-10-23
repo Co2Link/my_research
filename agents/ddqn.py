@@ -28,14 +28,18 @@ class DDQN(Agent):
     except this implementation has Double-Q-Learning and a different optimizer
     """
 
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, model_size):
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, is_small):
         super().__init__(env, logger)
 
         self.batch_size = batch_size
 
         # build network
-        self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
-        self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
+        if is_small:
+            self.model = self.build_small_CNN_model(self.state_shape, self.action_num, "model")
+            self.target = self.build_small_CNN_model(self.state_shape, self.action_num, "target")
+        else:
+            self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
+            self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
         self.model.compile(optimizer=Adam(lr), loss=huberloss)
         self.target.compile(optimizer=Adam(lr), loss="mse")
         self.max_memory_size = int(memory_size)
