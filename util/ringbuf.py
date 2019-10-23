@@ -5,11 +5,11 @@ class RingBuf:
     this implementation is much faster than
     collection.deque in sampling while size > 100000
     """
-    def __init__(self, size):
-        self.data = [None] * (size + 1)
+    def __init__(self, maxlen):
+        self.data = [None] * (maxlen + 1)
         self.start = 0
         self.end = 0
-        self.len = size + 1
+        self.len = maxlen + 1
 
     def append(self, element):
         self.data[self.end] = element
