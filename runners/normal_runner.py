@@ -15,6 +15,7 @@ class Normal_runner(RL_runner):
         self.render = render
         self.save_model_interval = save_model_interval
 
+
     def traj_generator(self, agent, env):
         """ generate trajectory """
         state = env.reset()
@@ -58,14 +59,14 @@ class Normal_runner(RL_runner):
                 # log
                 if self.logger is not None:
                     if self.episode % self.save_model_interval == 0:
-                        self.logger.save_model(agent, self.episode)
+                        self.logger.save_weights(agent, self.episode)
 
                     self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
-                            self.eps_start + (self.eps_end - self.eps_start) * fraction)})
+                        self.eps_start + (self.eps_end - self.eps_start) * fraction)})
                 else:
                     print("{} : {}, steps : {}, epsilon : {}".format(self.episode, episode_reward, epi_step,
                                                                      self.eps_start + (
-                                                                             self.eps_end - self.eps_start) * fraction))
+                                                                         self.eps_end - self.eps_start) * fraction))
 
                 self.episode += 1
                 epi_step = 0
@@ -81,6 +82,9 @@ class Normal_runner(RL_runner):
 
     def train(self, agent, env, max_iter, batch_size, warmup=0, target_update_interval=0):
         """ train the agent """
+
+        self.logger.save_model_arch(agent)
+
         traj_gen = self.traj_generator(agent, env)
 
         start_time = time.time()

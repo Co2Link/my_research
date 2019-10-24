@@ -18,13 +18,17 @@ GAME_Pong = 'PongNoFrameskip-v4'  # discrete(6)
 class Teacher(Agent):
     """ teacher class which generate memory for student to learn """
 
-    def __init__(self, model_path, env, epsilon=0.05, mem_size=50000, eval_iteration=10000):
+    def __init__(self, model_path, env, epsilon=0.05, mem_size=50000, eval_iteration=10000, is_small = False):
         super().__init__(env, None)
         """ initiated by a trained model """
         self.env = env
 
         # load model
-        model = self.build_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
+        if is_small:
+            model = self.build_small_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
+        else:
+            model = self.build_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
+
         model.load_weights(model_path)
         self.model = model
 

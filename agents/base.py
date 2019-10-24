@@ -62,12 +62,26 @@ class ModelBuilder:
 
         return Model(inputs, q)
 
-    def save_model(self, info, file_name='model'):
-        if os.path.exists(file_name + "_" + str(info) + ".h5f"):
-            os.remove(file_name + "_" + str(info) + ".h5f")
-        save_path = file_name + "_" + str(info) + ".h5f"
-        self.model.save_weights(save_path)
-        self.model_file_name = save_path.split('/')[-1]
+    def save_weights(self, info, path, file_name = 'model_weights'):
+        """
+        save model architecture in json file
+        and model weights in .h5f file
+        """
+        path_with_file_name = path + '/' + file_name+ "_" + str(info)
+        if os.path.exists(path_with_file_name + ".h5f"):
+            os.remove(path_with_file_name + ".h5f")
+
+        self.model.save_weights(path_with_file_name + ".h5f")
+
+        self.model_file_name = (path_with_file_name + '.h5f').split('/')[-1]
+    
+    def save_model_arch(self,path,file_name = 'model_arch'):
+        path_with_file_name = path + '/' + file_name
+        if os.path.exists(path_with_file_name + '.json'):
+            os.remove(path_with_file_name + '.json')
+        with open(path_with_file_name + '.json','w') as json_file:
+            json_file.write(self.model.to_json())
+        
 
 
 class Agent(ModelBuilder, metaclass=ABCMeta):

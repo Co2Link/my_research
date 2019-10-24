@@ -28,7 +28,7 @@ def ddqn_main(logger):
     )
 
     ddqn_agent = DDQN(
-        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, IS_SMALL
+        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, IS_SMALL, IS_LOAD_MODEL
     )
 
     runner.train(
@@ -42,7 +42,7 @@ def ddqn_main(logger):
 
     if logger is not None:
         # Save the final model
-        logger.save_model(ddqn_agent, -1)
+        logger.save_weights(ddqn_agent, -1)
         # Record the total used time
         logger.log_total_time_cost()
 
@@ -80,7 +80,7 @@ def test(logger):
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, IS_SMALL, IS_LOAD_MODEL)
 
     runner.train(
         ddqn_agent,
@@ -93,7 +93,7 @@ def test(logger):
 
     if logger is not None:
         # Save the final model
-        logger.save_model(ddqn_agent, -1)
+        logger.save_weights(ddqn_agent, -1)
         # Record the total used time
         logger.log_total_time_cost()
 
@@ -120,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
     parser.add_argument("--no_scale", action="store_false")
     parser.add_argument("--is_small", action="store_true")
+    parser.add_argument("--is_load_model", action="store_true")
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -138,6 +139,7 @@ if __name__ == "__main__":
     SCALE = args.no_scale
     ROOT_PATH = args.root
     IS_SMALL = args.is_small
+    IS_LOAD_MODEL = args.is_load_model
 
     config = tf.ConfigProto(
         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu)
