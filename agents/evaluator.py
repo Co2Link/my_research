@@ -80,6 +80,8 @@ class Evaluator(Agent):
 
                 self.ep_rewards.append(ep_reward)
                 ep_reward = 0
+            
+            state = state_
 
         avg_ep_reward = sum(self.ep_rewards) / len(self.ep_rewards)
         print("*** avg_ep_reward of {}: {} ***".format(self.dir_name, avg_ep_reward))
@@ -87,6 +89,24 @@ class Evaluator(Agent):
         self.write_rewards()
 
         return avg_ep_reward
+
+    def play(self):
+        state = self.env.reset()
+
+        while True:
+            self.env.render()
+
+            if self.eps <= np.random.uniform(0,1):
+                action = self.select_action(state)
+            else:
+                action = self.env.action_space.sample()
+
+            state_, _, done, _ = self.env.step(action)
+
+            if done:
+                state_ = self.env.reset()
+            
+            state = state_
 
     def write_rewards(self):
         with open(os.path.join(self.save_path, 'rewards.csv').replace('\\', '/'), 'w', newline='') as f:
