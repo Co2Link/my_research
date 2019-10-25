@@ -123,6 +123,17 @@ class LogWriter():
         agent.save_model_arch(os.path.join(
             self.save_path, 'models').replace('\\', '/'))
 
+    def save_evaluate_rewards(self,evaluate_rewards):
+        with open(os.path.join(self.save_path,'evaluate_rewards.csv').replace('\\','/'),'w',newline='') as f:
+            writer = csv.writer(f)
+
+            # write the avg_eps_reward at the first line
+            avg_eps_reward = sum(evaluate_rewards)/len(evaluate_rewards)
+
+            writer.writerow((avg_eps_reward,))
+            for reward in evaluate_rewards:
+                writer.writerow((reward,))
+            
     def set_model(self, model):
         self.tb.set_model(model)
 

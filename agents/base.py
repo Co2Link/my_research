@@ -64,8 +64,7 @@ class ModelBuilder:
 
     def save_weights(self, info, path, file_name = 'model_weights'):
         """
-        save model architecture in json file
-        and model weights in .h5f file
+        save model weights in .h5f file
         """
         path_with_file_name = path + '/' + file_name+ "_" + str(info)
         if os.path.exists(path_with_file_name + ".h5f"):
@@ -76,6 +75,9 @@ class ModelBuilder:
         self.model_file_name = (path_with_file_name + '.h5f').split('/')[-1]
     
     def save_model_arch(self,path,file_name = 'model_arch'):
+        """
+        save model architecture in json file
+        """
         path_with_file_name = path + '/' + file_name
         if os.path.exists(path_with_file_name + '.json'):
             os.remove(path_with_file_name + '.json')
