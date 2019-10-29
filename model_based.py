@@ -93,8 +93,8 @@ class Memory_generator:
         one_hot_actions[np.arange(batch_size),actions] = 1
 
         # scale
-        # states = np.array(states).astype(np.float32)/255.0
-        # state_s = np.array(state_s).astype(np.float32)/255.0
+        states = np.array(states).astype(np.float32)/255.0
+        state_s = np.array(state_s).astype(np.float32)/255.0
         
         return states,one_hot_actions,rewards,state_s
 
@@ -201,7 +201,7 @@ class state_predictor:
         return loss
     
     def predict(self,x,action):
-        return self.model.predict_on_batch(x = {'frames':x,'actions':action}).ravel()
+        return self.model.predict_on_batch(x = {'frames':x,'actions':action})
 
     def save_weights(self, info, path, file_name = 'model_weights'):
         """
@@ -280,7 +280,7 @@ def test_world_model():
 
     mg = Memory_generator(root_path = 'model',memory_size = 1000)
     mg.restore_memories()
-    states,actions,rewards,state_s = mg.sample_memories(1)
+    states,actions,rewards,state_s = mg.sample_memories(10)
 
     predicted_frame = sp.predict(states,actions)
     
@@ -288,9 +288,16 @@ def test_world_model():
 
     from matplotlib import pyplot as plt
 
-    plt.imshow(np.squeeze(state_s[:,:,:,3]),interpolation='nearest')
-    plt.show()
-    plt.imshow(np.squeeze(predicted_frame.reshape((84,84))),interpolation='nearest')
+    fig = plt.figure(figsize=(10,10))
+
+    rows,cols = 3,2
+
+    for i in range(1,rows+1):
+        fig.add_subplot(rows,cols,2*i-1).set_title('real')
+        plt.imshow(state_s[i-1,:,:,3],interpolation='nearest')
+        fig.add_subplot(rows,cols,2*i).set_title('predicted')
+        plt.imshow(predicted_frame[i-1,:,:],interpolation='nearest')
+
     plt.show()
 
 
