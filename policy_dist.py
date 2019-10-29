@@ -92,7 +92,7 @@ def Evaluation():
             os.mkdir(save_path)
             print('*** Create folder: {} ***'.format(save_path))
 
-        Evaluator(files_path, save_path, eval_iteration=EVAL_ITERATION).play()
+        Evaluator(files_path, save_path, eval_iteration=EVAL_ITERATION).evaluate()
 
 
 def test():

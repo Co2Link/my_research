@@ -10,6 +10,7 @@ from util.env_util import gather_numpy, scatter_numpy
 from agents.base import Agent
 
 import time
+from tqdm import tqdm
 
 
 def huberloss(y_true, y_pred):
@@ -120,3 +121,37 @@ class DDQN(Agent):
 
     def memory_size(self):
         return len(self.s_memory)
+
+    def evaluate(self,epsilon = 0.05,iter = 100000):
+
+        print('*** Evaluating ***')
+
+        state = self.env.reset()
+
+        ep_reward = 0
+
+        ep_rewards = []
+
+        for _ in tqdm(range(iter), ascii=True):
+
+            if epsilon <= np.random.uniform(0, 1):
+                action = self.select_action(state)
+            else:
+                action = self.env.action_space.sample()
+
+            state_, reward, done, _ = self.env.step(action)
+
+            ep_reward += reward
+
+            if done:
+                state_ = self.env.reset()
+
+                ep_rewards.append(ep_reward)
+                ep_reward = 0
+            
+            state = state_
+
+        avg_ep_reward = sum(ep_rewards) / len(ep_rewards)
+        print("*** avg_ep_reward of {} ***".format(avg_ep_reward))
+
+        return ep_rewards

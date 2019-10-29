@@ -8,7 +8,6 @@ import tensorflow as tf
 import time
 from atari_wrappers import *
 
-
 def ddqn_main(logger):
     # make environment
     env = make_atari(GAME)
@@ -40,11 +39,17 @@ def ddqn_main(logger):
         target_update_interval=TARGET_UPDATE,
     )
 
+
+
     if logger is not None:
         # Save the final model
         logger.save_weights(ddqn_agent, -1)
         # Record the total used time
         logger.log_total_time_cost()
+        # save the final weight
+        logger.save_weights(ddqn_agent,'final')
+        # evaluate the model
+        logger.save_evaluate_rewards(ddqn_agent.evaluate())
 
 
 def test(logger):

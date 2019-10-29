@@ -86,7 +86,7 @@ class Evaluator(Agent):
         avg_ep_reward = sum(self.ep_rewards) / len(self.ep_rewards)
         print("*** avg_ep_reward of {}: {} ***".format(self.dir_name, avg_ep_reward))
 
-        self.write_rewards()
+        self.write_rewards(avg_ep_reward)
 
         return avg_ep_reward
 
@@ -108,9 +108,13 @@ class Evaluator(Agent):
             
             state = state_
 
-    def write_rewards(self):
+    def write_rewards(self,avg_ep_reward):
         with open(os.path.join(self.save_path, 'rewards.csv').replace('\\', '/'), 'w', newline='') as f:
             writer = csv.writer(f)
+            
+            # write the avg_ep_reward at the first line
+            writer.writerow((avg_ep_reward,))
+
             for ep_reward in self.ep_rewards:
                 writer.writerow((ep_reward,))
 
