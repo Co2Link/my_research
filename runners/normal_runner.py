@@ -52,7 +52,7 @@ class Normal_runner(RL_runner):
             if not done:
                 yield state, action, reward, state_
             else:
-                state_ = np.zeros(np.array(state_).shape)
+                # state_ = np.zeros(np.array(state_).shape)
 
                 yield state, action, reward, state_
 
