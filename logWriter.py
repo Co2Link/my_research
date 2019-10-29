@@ -115,7 +115,7 @@ class LogWriter():
         """ count the iteration """
         self.iteration += 1
 
-    def save_weights(self, agent, info):
+    def save_weights(self, agent, info = ''):
         agent.save_weights(info, os.path.join(
             self.save_path, 'models').replace('\\', '/'))
 
