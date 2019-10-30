@@ -150,3 +150,6 @@ class LogWriter():
             writer = csv.writer(f)
             writer.writerow(('total_time_cost', time.time() - self.start_time))
             print('*** total_time_cost:{} ***'.format(time.time() - self.start_time))
+
+    def store_memories(self,agent):
+        agent.store_memories(self.save_path)

@@ -1,12 +1,27 @@
 import os
+import time
+import pickle
 
 from keras import Sequential
 from keras.layers import Dense, Input, Conv2D, Flatten
 from keras.models import Model
 
 from abc import ABCMeta, abstractmethod
+from collections import deque
 
+class MemoryStorer:
+    def __init__(self, size):
+        self.memories_storation = deque(maxlen=size)
 
+    def add_memory_storation(memory):
+        self.memories_storation.append(memory)
+
+    def store_memories(self,path):
+        start_time = time.time()
+        with open(os.path.join(path,'memories.pkl'),'wb') as f:
+            pickle.dump(list(self.memories_storation),f)
+        print("*** time cost for storing memories(len: {}) {} ***".format(len(self.memories_storation),time.time()-start_time))
+        
 class ModelBuilder:
 
     def __init__(self):
@@ -102,8 +117,6 @@ class ModelBuilder:
         with open(path_with_file_name + '.json','w') as json_file:
             json_file.write(self.model.to_json())
         
-
-
 class Agent(ModelBuilder, metaclass=ABCMeta):
     def __init__(self, env, logger):
         super().__init__()

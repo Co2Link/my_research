@@ -1,13 +1,13 @@
 import random
 import numpy as np
-from collections import deque
+from collections import deque,namedtuple
 
 from keras.optimizers import Adam, RMSprop
 from keras import backend as K
 import tensorflow as tf
 
 from util.env_util import gather_numpy, scatter_numpy
-from agents.base import Agent
+from agents.base import Agent,MemoryStorer
 
 import time
 from tqdm import tqdm
@@ -21,16 +21,18 @@ def huberloss(y_true, y_pred):
     loss = tf.where(cond, L2, L1)
     return K.mean(loss)
 
+Memory = namedtuple('Memory',['state','action','reward','state_'])
 
-class DDQN(Agent):
+class DDQN(Agent,MemoryStorer):
     """
     Double-Deep-Q-Learning
     almost the same implementation as the DQN-paper( Human-Level... )
     except this implementation has Double-Q-Learning and a different optimizer
     """
 
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, net_size, is_load_model):
-        super().__init__(env, logger)
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, net_size, is_load_model,memory_size_storation):
+        Agent.__init__(self, env, logger)
+        MemoryStorer.__init__(self,memory_size_storation)
 
         self.batch_size = batch_size
 
@@ -60,17 +62,12 @@ class DDQN(Agent):
             logger.set_loss_name([*self.model.metrics_names])
 
         # memory
-        self.s_memory = deque(maxlen=self.max_memory_size)
-        self.a_memory = deque(maxlen=self.max_memory_size)
-        self.r_memory = deque(maxlen=self.max_memory_size)
-        self.ns_memory = deque(maxlen=self.max_memory_size)
+        self.memories = deque(maxlen=self.max_memory_size)
 
     def memorize(self, s, a, r, s_):
         """ Add memory """
-        self.s_memory.append(s)
-        self.a_memory.append(a)
-        self.r_memory.append(r)
-        self.ns_memory.append(s_)
+        self.memories.append(Memory(s,a,r,s_))
+        self.memories_storation.append(Memory(s,a,r,s_))
 
     def select_action(self, state):
         state = self.LazyFrame2array(state)
@@ -84,12 +81,8 @@ class DDQN(Agent):
     def learn(self):
         """ Update model network """
         # sample from memory
-        index = list(np.random.choice(len(self.s_memory), self.batch_size))
-
-        s_batch = [self.s_memory[i] for i in index]
-        a_batch = [self.a_memory[i] for i in index]
-        r_batch = [self.r_memory[i] for i in index]
-        ns_batch = [self.ns_memory[i] for i in index]
+        batch = random.sample(self.memories,self.batch_size)
+        s_batch,a_batch,r_batch,ns_batch = zip(*batch)
 
         s_batch = self.LazyFrame2array(s_batch)
         ns_batch = self.LazyFrame2array(ns_batch)
@@ -100,9 +93,12 @@ class DDQN(Agent):
         action_index = self.model.predict_on_batch(ns_batch).argmax(axis=1).reshape(-1, 1).astype(int)
         # compute corresponding action-value by target-network,
         q_target = self.target.predict_on_batch(ns_batch)
+
+        # q_targ = r when next_state == done
         for i in range(self.batch_size):
             if np.array_equal(ns_batch[i,:,:,:],np.zeros(ns_batch[i,:,:,:].shape)):
                 q_target[i,:] = 0
+
         q_target_sub = gather_numpy(q_target, 1, action_index) * self.gamma + np.array(r_batch).reshape(-1, 1)
         # scatter action-value on q_model
         q_model_ = scatter_numpy(np.copy(q_model), 1, np.array(a_batch).reshape(-1, 1).astype(int), q_target_sub)
@@ -129,7 +125,7 @@ class DDQN(Agent):
             return np.array(LazyFrame).astype(np.float32) / 255.0
 
     def memory_size(self):
-        return len(self.s_memory)
+        return len(self.memories)
 
     def evaluate(self,epsilon = 0.05,iter = 100000):
 

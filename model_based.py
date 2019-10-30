@@ -8,6 +8,7 @@ import time
 import numpy as np
 import random
 import pickle
+import csv
 from collections import deque,namedtuple
 from keras import backend as K
 import tensorflow as tf
@@ -20,15 +21,7 @@ from logWriter import LogWriter
 Memory = namedtuple('Memory',['state','action','reward','state_'])
 
 class Memory_generator:
-    def __init__(self,root_path ,train_memory_size = 1000,test_memory_size = 500,game_name = "BreakoutNoFrameskip-v4"):
-
-        env = make_atari(game_name)
-        self.env = wrap_deepmind(env,frame_stack=True,scale=False)
-
-        with open(os.path.join(root_path,'model_arch.json'),'r') as f:
-            self.model = model_from_json(f.read())
-        
-        self.model.load_weights(os.path.join(os.path.join(root_path,'model_weights.h5f')))
+    def __init__(self,root_path ,train_memory_size = 1000,test_memory_size = 500):
 
         self.train_memory_size = train_memory_size
 
@@ -39,6 +32,13 @@ class Memory_generator:
         self.action_space_size = 4
 
         self.memories = []
+    
+    def load_model_and_env(self,game_name = "BreakoutNoFrameskip-v4"):
+        env = make_atari(game_name)
+        self.env = wrap_deepmind(env,frame_stack=True,scale=True)
+        with open(os.path.join(self.root_path,'models','model_arch.json'),'r') as f:
+            self.model = model_from_json(f.read())
+        self.model.load_weights(os.path.join(os.path.join(self.root_path,'models','model_weights_final.h5f')))
 
     def _memory_generator(self):
 
@@ -87,6 +87,14 @@ class Memory_generator:
             self.memories = pickle.load(f)
         print("*** time cost for storing memories: {} ***".format(time.time()-start_time))
 
+        with open(os.path.join(self.root_path,'setting.csv'), newline='') as f:
+            reader = csv.reader(f)
+            setting_dict = {row[0]: row[1] for row in reader}
+        self.memory_size = int(setting_dict['memory_size_storation'])
+        self.train_memory_size = int(self.memory_size*9/10)
+        self.test_memory_size = int(self.memory_size/10)
+        print('*** traning size: {},testing size: {}'.format(self.train_memory_size,self.test_memory_size))
+
     def sample_memories(self,batch_size,test = False):
         """ sample memories for trainning or testing """
         if test:
@@ -98,10 +106,6 @@ class Memory_generator:
 
         one_hot_actions = np.zeros((batch_size,self.action_space_size))
         one_hot_actions[np.arange(batch_size),actions] = 1
-
-        # scale
-        states = np.array(states).astype(np.float32)/255.0
-        state_s = np.array(state_s).astype(np.float32)/255.0
         
         return states,one_hot_actions,rewards,state_s
 
@@ -376,13 +380,9 @@ def test_world_model_2(prediction_steps = 5):
 
 
 if __name__ == "__main__":
-    # train_world_model(train_memory_size=100000,test_memory_size=1000,epoch=100000,restore_memories=True)
-    # test_world_model()
-    # mg = Memory_generator(root_path = 'model')
-    # mg.restore_memories()
-    # state,one_hot_action,state_ = mg.sample_memories_MultiStep(prediction_steps=3)
-    # print(state.shape)
-    # print(one_hot_action.shape)
-    # print(state_.shape)
+    root_path = 'result/191031_012825'
 
-    test_world_model_2()
+    mg = Memory_generator(root_path)
+    mg.restore_memories()
+    mg.sample_memories(32)
+    mg.sample_memories(32,test=True)

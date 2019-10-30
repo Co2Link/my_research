@@ -27,7 +27,7 @@ def ddqn_main(logger):
     )
 
     ddqn_agent = DDQN(
-        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, IS_LOAD_MODEL
+        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, IS_LOAD_MODEL, MEMORY_SIZE_STORATION
     )
 
     runner.train(
@@ -39,7 +39,7 @@ def ddqn_main(logger):
         target_update_interval=TARGET_UPDATE,
     )
 
-
+    
 
     if logger is not None:
         # Save the final model
@@ -48,6 +48,8 @@ def ddqn_main(logger):
         logger.log_total_time_cost()
         # save the final weight
         logger.save_weights(ddqn_agent,'final')
+        # save the memories
+        logger.store_memories(ddqn_agent)
         # evaluate the model
         logger.save_evaluate_rewards(ddqn_agent.evaluate())
 
@@ -127,6 +129,7 @@ if __name__ == "__main__":
     parser.add_argument("--net_size",type = str,default="normal")
     parser.add_argument("--is_load_model", action="store_true")
     parser.add_argument("--info",type=str,default='')
+    parser.add_argument("--memory_size_storation", type=int,default=100000)
 
     args = parser.parse_args()
 
@@ -147,6 +150,9 @@ if __name__ == "__main__":
     ROOT_PATH = args.root
     NET_SIZE = args.net_size
     IS_LOAD_MODEL = args.is_load_model
+    MEMORY_SIZE_STORATION = args.memory_size_storation
+
+    assert MEMORY_SIZE_STORATION < MAX_ITERATION,'MEMORY_SIZE_STORATION < MAX_ITERATION'
 
     config = tf.ConfigProto(
         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu)
