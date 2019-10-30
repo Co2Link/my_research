@@ -20,7 +20,7 @@ from logWriter import LogWriter
 Memory = namedtuple('Memory',['state','action','reward','state_'])
 
 class Memory_generator:
-    def __init__(self,root_path ,memory_size,game_name = "BreakoutNoFrameskip-v4"):
+    def __init__(self,root_path ,train_memory_size,test_memory_size,game_name = "BreakoutNoFrameskip-v4"):
 
         env = make_atari(game_name)
         self.env = wrap_deepmind(env,frame_stack=True,scale=False)
@@ -30,13 +30,15 @@ class Memory_generator:
         
         self.model.load_weights(os.path.join(os.path.join(root_path,'model_weights.h5f')))
 
-        self.memories = deque(maxlen=memory_size)
+        self.train_memory_size = train_memory_size
 
-        self.memory_size = memory_size
+        self.test_memory_size = test_memory_size
 
         self.root_path = root_path
 
         self.action_space_size = 4
+
+        self.memories = []
 
     def _memory_generator(self):
 
@@ -54,7 +56,7 @@ class Memory_generator:
             if not done:
                 yield state,action,reward,state_
             else:
-                state_ = np.zeros(np.array(state_).shape)
+                # state_ = np.zeros(np.array(state_).shape)
                 yield state,action,reward,state_
 
                 state_ = self.env.reset()
@@ -64,7 +66,8 @@ class Memory_generator:
 
         memory_gen = self._memory_generator()
 
-        for _ in tqdm(range(self.memory_size)):
+        print("*** generating memories for trainning and testing ***")
+        for _ in tqdm(range(self.train_memory_size + self.test_memory_size)):
             state,action,reward,state_ = next(memory_gen)
             self.memories.append(Memory(state,action,reward,state_))
         
@@ -84,8 +87,12 @@ class Memory_generator:
             self.memories = pickle.load(f)
         print("*** time cost for storing memories: {} ***".format(time.time()-start_time))
 
-    def sample_memories(self,batch_size):
-        batch = random.sample(self.memories,batch_size)
+    def sample_memories(self,batch_size,test = False):
+        """ sample memories for trainning or testing """
+        if test:
+            batch = random.sample(self.memories[:self.test_memory_size],batch_size)
+        else:
+            batch = random.sample(self.memories[self.test_memory_size:self.train_memory_size],batch_size)
 
         states,actions,rewards,state_s=map(np.array,zip(*batch))
 
@@ -99,15 +106,13 @@ class Memory_generator:
         return states,one_hot_actions,rewards,state_s
 
     def test(self):
-        self.generate_memories()
-        print(len(self.memories))
-        states,actions,rewards,state_s=map(np.array,zip(*self.memories))
+        states,actions,rewards,state_s = self.sample_memories(batch_size = 32)
 
         empty_state = np.zeros(state_s[0].shape)
 
         count_1 = 0
 
-        for i in range(self.memory_size):
+        for i in range(32):
             if np.array_equal(state_s[i],empty_state):
                 count_1+=1
                 continue
@@ -258,7 +263,7 @@ def train_world_model(restore_memories=False):
 
     print('trainning world model')
     for i in tqdm(range(epoch)):
-        states,actions,rewards,state_s = gen.sample_memories(batch_size)
+        states,actions,rewards,state_s = gen.sample_trainning_memories(batch_size)
 
         loss = model.update(states,state_s[:,:,:,3],actions)
 
@@ -280,7 +285,7 @@ def test_world_model():
 
     mg = Memory_generator(root_path = 'model',memory_size = 1000)
     mg.restore_memories()
-    states,actions,rewards,state_s = mg.sample_memories(10)
+    states,actions,rewards,state_s = mg.sample_trainning_memories(10)
 
     predicted_frame = sp.predict(states,actions)
     
@@ -306,7 +311,10 @@ def test_world_model():
 
 if __name__ == "__main__":
     # train_world_model(restore_memories=True)
-    test_world_model()
+    # test_world_model()
+    mg = Memory_generator(root_path = 'model',train_memory_size = 1000, test_memory_size = 500)
+    mg.generate_memories(store = True)
+    mg.test()
 
 
 
@@ -317,6 +325,4 @@ if __name__ == "__main__":
         
 
         
-        
-
         

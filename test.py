@@ -1,6 +1,12 @@
-from atari_wrappers import *
-import time
-env = make_atari('BreakoutNoFrameskip-v4')
-env = wrap_deepmind(env,frame_stack=False,scale=True,frame_wrap = False)
 
-print(time.time())
+import time
+import itertools
+from collections import deque
+
+a=deque(maxlen=10)
+
+for i in range(10):
+    a.append(i)
+
+print(a)
+print(list(a))
