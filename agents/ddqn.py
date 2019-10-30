@@ -100,6 +100,9 @@ class DDQN(Agent):
         action_index = self.model.predict_on_batch(ns_batch).argmax(axis=1).reshape(-1, 1).astype(int)
         # compute corresponding action-value by target-network,
         q_target = self.target.predict_on_batch(ns_batch)
+        for i in range(self.batch_size):
+            if np.array_equal(ns_batch[i,:,:,:],np.zeros(ns_batch[i,:,:,:].shape)):
+                q_target[i,:] = 0
         q_target_sub = gather_numpy(q_target, 1, action_index) * self.gamma + np.array(r_batch).reshape(-1, 1)
         # scatter action-value on q_model
         q_model_ = scatter_numpy(np.copy(q_model), 1, np.array(a_batch).reshape(-1, 1).astype(int), q_target_sub)

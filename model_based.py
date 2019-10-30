@@ -20,7 +20,7 @@ from logWriter import LogWriter
 Memory = namedtuple('Memory',['state','action','reward','state_'])
 
 class Memory_generator:
-    def __init__(self,root_path ,train_memory_size,test_memory_size,game_name = "BreakoutNoFrameskip-v4"):
+    def __init__(self,root_path ,train_memory_size = 1000,test_memory_size = 500,game_name = "BreakoutNoFrameskip-v4"):
 
         env = make_atari(game_name)
         self.env = wrap_deepmind(env,frame_stack=True,scale=False)
@@ -104,6 +104,37 @@ class Memory_generator:
         state_s = np.array(state_s).astype(np.float32)/255.0
         
         return states,one_hot_actions,rewards,state_s
+
+    def sample_memories_MultiStep(self,prediction_steps = 1):
+
+        memories = self.memories[:self.test_memory_size]
+
+        while True:
+            randint = random.randint(0,len(memories)-prediction_steps)
+            dones = [memory[-1] for memory in memories[randint:randint+prediction_steps]]
+            if True in dones and not dones[-1]:
+                continue
+            else:
+                break
+
+        state = memories[randint][0]
+
+        state_ = [memories[randint+step][3][:,:,-1] for step in range(prediction_steps)]
+
+        action = [memories[randint+step][1] for step in range(prediction_steps)]
+        print('action',action)
+
+        one_hot_action = np.zeros((prediction_steps,self.action_space_size))
+        one_hot_action[np.arange(prediction_steps),action] = 1
+        print('one_hot_action',one_hot_action)
+
+
+        # scale
+        state = np.array(state).astype(np.float32)/255.0
+        state_ = np.array(state_).astype(np.float32)/255.0
+        one_hot_action = np.array(one_hot_action)
+        return state,one_hot_action,state_
+
 
     def test(self):
         states,actions,rewards,state_s = self.sample_memories(batch_size = 32)
@@ -280,19 +311,17 @@ def test_world_model():
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    sp = state_predictor(model_path='result_WORLD/191029_234644/models')
+    sp = state_predictor(model_path='result_WORLD/191030_151254/models')
 
-    mg = Memory_generator(root_path = 'model',memory_size = 1000)
+    mg = Memory_generator(root_path = 'model')
     mg.restore_memories()
-    states,actions,rewards,state_s = mg.sample_trainning_memories(10)
+    states,actions,rewards,state_s = mg.sample_memories(batch_size = 10,test=True)
 
     predicted_frame = sp.predict(states,actions)
     
-    print(predicted_frame.shape)
-
     from matplotlib import pyplot as plt
 
-    fig = plt.figure(figsize=(10,10))
+    fig = plt.figure()
 
     rows,cols = 3,2
 
@@ -304,20 +333,56 @@ def test_world_model():
 
     plt.show()
 
+def test_world_model_2(prediction_steps = 5):
+    config = tf.ConfigProto(
+        gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
+    )
+
+    sess = tf.Session(config=config)
+    K.set_session(sess)
+
+    sp = state_predictor(model_path='result_WORLD/191030_151254/models')
+
+    mg = Memory_generator(root_path = 'model')
+    mg.restore_memories()
+    state,one_hot_action,state_ = mg.sample_memories_MultiStep(prediction_steps=prediction_steps)
+    
+    predicted_frames = []
+    current_input_state = state
+    for i in range(prediction_steps):
+        predicted_frame = sp.predict(np.expand_dims(current_input_state,axis=0),np.expand_dims(one_hot_action[i],axis=0))
+        predicted_frames.append(predicted_frame)
+        current_input_state = np.concatenate((current_input_state[:,:,:3],predicted_frame.reshape((84,84,1))),axis=2)
+        print(current_input_state.shape)
+
+    predicted_frames = np.squeeze(np.array(predicted_frames))
+    
+    from matplotlib import pyplot as plt
+
+    fig = plt.figure()
+
+    rows,cols = prediction_steps,2
+
+    for i in range(1,rows+1):
+        fig.add_subplot(rows,cols,2*i-1).set_title('real_{}'.format(i))
+        plt.imshow(state_[i-1,:,:],interpolation='nearest')
+        fig.add_subplot(rows,cols,2*i).set_title('predicted_{}'.format(i))
+        plt.imshow(predicted_frames[i-1,:,:],interpolation='nearest')
+
+    plt.show()
+
 
     
 
 
 if __name__ == "__main__":
-    train_world_model(train_memory_size=100000,test_memory_size=1000,epoch=100000,restore_memories=True)
+    # train_world_model(train_memory_size=100000,test_memory_size=1000,epoch=100000,restore_memories=True)
     # test_world_model()
+    # mg = Memory_generator(root_path = 'model')
+    # mg.restore_memories()
+    # state,one_hot_action,state_ = mg.sample_memories_MultiStep(prediction_steps=3)
+    # print(state.shape)
+    # print(one_hot_action.shape)
+    # print(state_.shape)
 
-
-
-
-
-
-        
-
-        
-        
+    test_world_model_2()

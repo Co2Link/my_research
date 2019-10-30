@@ -1,8 +1,16 @@
 
 import time
 import itertools
-from collections import deque
+from collections import deque,namedtuple
+import random
+import numpy as np
 
-net_size = ''
 
-assert net_size in ['big','small','normal'],"net_size must be one of ['big','small','normal']"
+Memory = namedtuple('Memory',['state','action','reward','state_'])
+
+a = np.random.rand(2,3)
+
+print(a)
+
+for i in a:
+    print(i)
