@@ -43,6 +43,24 @@ class ModelBuilder:
 
         return Model(inputs, q)
 
+    def build_big_CNN_model(self, input_shape, output_num, name="default"):
+        """ build small CNN network """
+        inputs = Input(shape=input_shape)
+
+        x = Conv2D(filters=64, kernel_size=(8, 8), strides=(4, 4),
+                   activation="relu", name=(name + "_conv2D_1"))(inputs)
+        x = Conv2D(filters=128, kernel_size=(4, 4), strides=(2, 2),
+                   activation="relu", name=(name + "_conv2D_2"))(x)
+        x = Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1),
+                   activation="relu", name=(name + "_conv2D_3"))(x)
+
+        x = Flatten()(x)
+        x = Dense(1024, activation="relu", name=(name + "_dense"))(x)
+
+        q = Dense(output_num, activation='linear', name="q")(x)
+
+        return Model(inputs, q)
+
         # expect input shape of (N,H,W,C)
     def build_small_CNN_model(self, input_shape, output_num, name="default"):
         """ build small CNN network """

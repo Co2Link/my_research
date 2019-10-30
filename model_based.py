@@ -92,7 +92,7 @@ class Memory_generator:
         if test:
             batch = random.sample(self.memories[:self.test_memory_size],batch_size)
         else:
-            batch = random.sample(self.memories[self.test_memory_size:self.train_memory_size],batch_size)
+            batch = random.sample(self.memories[self.test_memory_size:self.train_memory_size + self.test_memory_size],batch_size)
 
         states,actions,rewards,state_s=map(np.array,zip(*batch))
 
@@ -230,10 +230,9 @@ class state_predictor:
         with open(path_with_file_name + '.json','w') as json_file:
             json_file.write(self.model.to_json())
 
-def train_world_model(restore_memories=False):
+def train_world_model(train_memory_size = 10000, test_memory_size = 1000, epoch = 10000, restore_memories=False):
     batch_size = 32
     action_space_size = 4
-    epoch = 10000
     ROOT_PATH = 'result_WORLD'
 
     config = tf.ConfigProto(
@@ -245,7 +244,7 @@ def train_world_model(restore_memories=False):
 
     logger = LogWriter(ROOT_PATH,batch_size)
 
-    gen = Memory_generator(root_path='model',memory_size=100000)
+    gen = Memory_generator('model',train_memory_size,test_memory_size)
 
     
     if restore_memories:
@@ -263,7 +262,7 @@ def train_world_model(restore_memories=False):
 
     print('trainning world model')
     for i in tqdm(range(epoch)):
-        states,actions,rewards,state_s = gen.sample_trainning_memories(batch_size)
+        states,actions,_,state_s = gen.sample_memories(batch_size)
 
         loss = model.update(states,state_s[:,:,:,3],actions)
 
@@ -310,12 +309,8 @@ def test_world_model():
 
 
 if __name__ == "__main__":
-    # train_world_model(restore_memories=True)
+    train_world_model(train_memory_size=100000,test_memory_size=1000,epoch=100000,restore_memories=True)
     # test_world_model()
-    mg = Memory_generator(root_path = 'model',train_memory_size = 1000, test_memory_size = 500)
-    mg.generate_memories(store = True)
-    mg.test()
-
 
 
 

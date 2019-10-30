@@ -3,10 +3,6 @@ import time
 import itertools
 from collections import deque
 
-a=deque(maxlen=10)
+net_size = ''
 
-for i in range(10):
-    a.append(i)
-
-print(a)
-print(list(a))
+assert net_size in ['big','small','normal'],"net_size must be one of ['big','small','normal']"

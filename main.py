@@ -27,7 +27,7 @@ def ddqn_main(logger):
     )
 
     ddqn_agent = DDQN(
-        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, IS_SMALL, IS_LOAD_MODEL
+        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, IS_LOAD_MODEL
     )
 
     runner.train(
@@ -85,7 +85,7 @@ def test(logger):
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, IS_SMALL, IS_LOAD_MODEL)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, IS_LOAD_MODEL)
 
     runner.train(
         ddqn_agent,
@@ -124,8 +124,10 @@ if __name__ == "__main__":
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
     parser.add_argument("--no_scale", action="store_false")
-    parser.add_argument("--is_small", action="store_true")
+    parser.add_argument("--net_size",type = str,default="normal")
     parser.add_argument("--is_load_model", action="store_true")
+    parser.add_argument("--info",type=str,default='')
+
     args = parser.parse_args()
 
     MAX_ITERATION = args.max_iteration
@@ -143,7 +145,7 @@ if __name__ == "__main__":
     GAME = args.game
     SCALE = args.no_scale
     ROOT_PATH = args.root
-    IS_SMALL = args.is_small
+    NET_SIZE = args.net_size
     IS_LOAD_MODEL = args.is_load_model
 
     config = tf.ConfigProto(
