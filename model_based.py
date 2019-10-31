@@ -121,8 +121,9 @@ class Memory_generator:
         one_hot_actions[np.arange(batch_size),actions] = 1
 
         # scale
-        states = np.array(states).astype(np.float32)/255.0
-        state_s = np.array(state_s).astype(np.float32)/255.0
+        if self.setting_dict['scale'] == 'False':
+            states = np.array(states).astype(np.float32)/255.0
+            state_s = np.array(state_s).astype(np.float32)/255.0
         return states,one_hot_actions,rewards,state_s
 
     def sample_memories_MultiStep(self,prediction_steps = 1):
@@ -150,8 +151,9 @@ class Memory_generator:
 
 
         # scale
-        state = np.array(state).astype(np.float32)/255.0
-        state_ = np.array(state_).astype(np.float32)/255.0
+        if self.setting_dict['scale'] == 'False':
+            state = np.array(state).astype(np.float32)/255.0
+            state_ = np.array(state_).astype(np.float32)/255.0
         return state,one_hot_action,state_
 
 
@@ -326,27 +328,31 @@ def test_world_model(world_path,model_path):
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    sp = state_predictor(model_path=os.path.join(world_path,'models'))
+    from matplotlib import pyplot as plt
+
+    sp = state_predictor(model_path=world_path)
 
     mg = Memory_generator(root_path = model_path)
     mg.restore_memories()
-    states,actions,rewards,state_s = mg.sample_memories(batch_size = 10,test=True)
-
-    predicted_frame = sp.predict(states,actions)
     
-    from matplotlib import pyplot as plt
+    while True:
+        states,actions,rewards,state_s = mg.sample_memories(batch_size = 10,test=True)
 
-    fig = plt.figure()
+        predicted_frame = sp.predict(states,actions)
+        
+        
 
-    rows,cols = 3,2
+        fig = plt.figure()
 
-    for i in range(1,rows+1):
-        fig.add_subplot(rows,cols,2*i-1).set_title('real')
-        plt.imshow(state_s[i-1,:,:,3],interpolation='nearest')
-        fig.add_subplot(rows,cols,2*i).set_title('predicted')
-        plt.imshow(predicted_frame[i-1,:,:],interpolation='nearest')
+        rows,cols = 3,2
 
-    plt.show()
+        for i in range(1,rows+1):
+            fig.add_subplot(rows,cols,2*i-1).set_title('real')
+            plt.imshow(state_s[i-1,:,:,3],interpolation='nearest')
+            fig.add_subplot(rows,cols,2*i).set_title('predicted')
+            plt.imshow(predicted_frame[i-1,:,:],interpolation='nearest')
+
+        plt.show()
 
 def test_world_model_2(world_path,model_path,prediction_steps = 5):
     config = tf.ConfigProto(
@@ -403,5 +409,6 @@ if __name__ == "__main__":
     # mg.restore_memories()
     # mg.sample_memories(32)
     # mg.sample_memories(32,test=True)
-    train_world_model('result/191031_023139',epoch=100000)
-    # test_world_model_2('result_WORLD/191031_165232','result/191031_023139')
+    # train_world_model('result/191031_161605',epoch=10000)
+
+    test_world_model('result_WORLD/191031_200742','result/191031_161605')

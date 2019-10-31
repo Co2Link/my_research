@@ -38,7 +38,7 @@ class DDQN(Agent,MemoryStorer):
 
         self.batch_size = batch_size
 
-        assert net_size in ['big','small','normal'],"net_size must be one of ['big','small','normal']"
+        assert net_size in ['big','small','normal','super'],"net_size must be one of ['big','small','normal']"
 
         # build network
         if net_size == 'big':
@@ -50,6 +50,9 @@ class DDQN(Agent,MemoryStorer):
         elif net_size == 'normal':
             self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
             self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
+        elif net_size == 'super':
+            self.model = self.build_super_CNN_model(self.state_shape, self.action_num, "model")
+            self.target = self.build_super_CNN_model(self.state_shape, self.action_num, "target")
 
         if load_model_path:
             with open(os.path.join(load_model_path,'models','model_arch.json'),'r') as f:
