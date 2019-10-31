@@ -2,7 +2,7 @@ import numpy as np
 from keras.layers import Flatten, Conv2D, Input, Dense
 from keras.models import Model
 from keras.optimizers import Adam
-from agents.base import Agent
+from agents.base import Agent,ModelBuilder
 import tensorflow as tf
 from keras import backend as K
 from tqdm import tqdm
@@ -83,6 +83,54 @@ class SingleDtStudent(Agent):
 
     def _LazyFrame2array(self, LazyFrame):
         return np.array(LazyFrame)
+
+class SingleDtStudent_world(ModelBuilder):
+
+    def __init__(self,teacher,logger,net_size,epoch,lr):
+
+        self.teacher = teacher
+
+        self.logger=logger
+
+        self.state_shape=(84,84,4)
+
+        self.action_num = 4
+
+        self.epoch = epoch
+
+        if net_size == 'big':
+            self.model = self.build_big_CNN_model(self.state_shape, self.action_num, "model")
+        elif net_size == 'small':
+            self.model = self.build_small_CNN_model(self.state_shape, self.action_num, "model")
+        elif net_size == 'normal':
+            self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
+        
+        self.model.compile(optimizer=Adam(lr), loss=kullback_leibler_divergence)
+
+        logger.set_model(self.model)
+        logger.set_loss_name([*self.model.metrics_names])
+
+    def distill(self):
+        
+        avg_loss = 0
+        for e in tqdm(range(self.epoch),ascii=True):
+
+            s_batch, o_batch = self.teacher.sample_memories()
+
+            loss = self.model.train_on_batch(np.array(s_batch),np.array(o_batch))
+
+            self.logger.add_loss([loss])
+
+            avg_loss+=loss
+
+            if e%1000 == 0:
+                print(" avg_loss: {}".format(avg_loss/1000))
+                avg_loss=0
+            
+            
+
+
+
 
 
 if __name__ == '__main__':

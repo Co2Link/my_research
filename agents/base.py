@@ -8,13 +8,12 @@ from keras.models import Model
 
 from abc import ABCMeta, abstractmethod
 from collections import deque
+from util.ringbuf import RingBuf
 
 class MemoryStorer:
     def __init__(self, size):
-        self.memories_storation = deque(maxlen=size)
-
-    def add_memory_storation(memory):
-        self.memories_storation.append(memory)
+        # RingBuf is much faster when size bigger than 100000
+        self.memories_storation = RingBuf(maxlen=size)
 
     def store_memories(self,path):
         start_time = time.time()

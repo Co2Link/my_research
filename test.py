@@ -3,13 +3,18 @@ import time
 import itertools
 from collections import deque,namedtuple
 import random
+import csv
 import numpy as np
 from util.env_util import gather_numpy
 from atari_wrappers import *
+from util.ringbuf import RingBuf
 Memory = namedtuple('Memory',['state','action','reward','state_'])
 
-env = make_atari("BreakoutNoFrameskip-v4")
 
-print(type(env.action_space.sample()))
-for i in range(100):
-    print(random.randint(0,3))
+a = RingBuf(maxlen=10)
+
+for i in range(10):
+    a.append(i)
+
+print(list(a))
+

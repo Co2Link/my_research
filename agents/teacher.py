@@ -196,11 +196,12 @@ class Teacher_world_model(object):
             self.t_m = pickle.load(f)
 
         # Memory
-        self.i_m = [] # input
-        self.o_m = [] # output
+        self.i_m = [] # input  (n,84,84,4) 
+        self.o_m = [] # output  (n,4)
 
         self.mem_gen = self._memory_generator()
-
+        
+        print('*** generating memories ***')
         for _ in range(mem_size):
             state,output = next(self.mem_gen)  # (84,84,4)  (4,)
             self.i_m.append(state)
@@ -230,20 +231,20 @@ class Teacher_world_model(object):
                 state_ = np.concatenate(state[:,:,1:],state_.reshape((84,84,1)),axis=2)
 
                 state = state_ 
-    def sample_memories(self,size=32):   # bug
-        index = np.random.choice(len(self.s_m), size)
+    def sample_memories(self,size=32):
+        index = np.random.choice(len(self.i_m), size)
         index = list(index)
 
         i_batch = [self.i_m[ind] for ind in index]
         o_batch = [self.o_m[ind] for ind in index]
 
-        return s_batch, o_batch #
+        return i_batch, o_batch
 
     def _select_action_output_logit(self, state):
         """ return the selected action and the output logit """
 
         state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
+        output = self.agent_model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
 
         return np.argmax(output), output
 

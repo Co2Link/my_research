@@ -32,6 +32,12 @@ class Memory_generator:
         self.action_space_size = 4
 
         self.memories = []
+
+        with open(os.path.join(root_path,'setting.csv'),newline='') as f:
+            reader = csv.reader(f)
+            self.setting_dict = {row[0]: row[1] for row in reader}
+
+
     
     def load_model_and_env(self,game_name = "BreakoutNoFrameskip-v4"):
         env = make_atari(game_name)
@@ -86,13 +92,20 @@ class Memory_generator:
         with open(os.path.join(self.root_path,'memories.pkl'),'rb') as f:
             self.memories = pickle.load(f)
         print("*** time cost for storing memories: {} ***".format(time.time()-start_time))
+        
+        cleaned_memories = []
+        for memory in self.memories:
+            if not np.array_equal(memory[3],np.zeros(np.shape(memory[0]))):
+                cleaned_memories.append(memory)
+        self.memories = cleaned_memories
+        print("*** cleaned memories size :{} ***".format(len(self.memories)))
 
         with open(os.path.join(self.root_path,'setting.csv'), newline='') as f:
             reader = csv.reader(f)
             setting_dict = {row[0]: row[1] for row in reader}
         self.memory_size = int(setting_dict['memory_size_storation'])
-        self.train_memory_size = int(self.memory_size*9/10)
-        self.test_memory_size = int(self.memory_size/10)
+        self.train_memory_size = int(len(self.memories)*9/10)
+        self.test_memory_size = int(len(self.memories)/10)
         print('*** traning size: {},testing size: {}'.format(self.train_memory_size,self.test_memory_size))
 
     def sample_memories(self,batch_size,test = False):
@@ -129,17 +142,16 @@ class Memory_generator:
         state_ = [memories[randint+step][3][:,:,-1] for step in range(prediction_steps)]
 
         action = [memories[randint+step][1] for step in range(prediction_steps)]
-        print('action',action)
+        # print('action',action)
 
         one_hot_action = np.zeros((prediction_steps,self.action_space_size))
         one_hot_action[np.arange(prediction_steps),action] = 1
-        print('one_hot_action',one_hot_action)
+        # print('one_hot_action',one_hot_action)
 
 
         # scale
         state = np.array(state).astype(np.float32)/255.0
         state_ = np.array(state_).astype(np.float32)/255.0
-        one_hot_action = np.array(one_hot_action)
         return state,one_hot_action,state_
 
 
@@ -193,9 +205,9 @@ class state_predictor:
     def __init__(self,model_path = None):
         if model_path:
             print("*** load pretrained model ***")
-            with open(os.path.join(model_path,'model_arch.json'),'r') as f:
+            with open(os.path.join(model_path,'models','model_arch.json'),'r') as f:
                 self.model = model_from_json(f.read())
-            self.model.load_weights(os.path.join(model_path,'model_weights_.h5f'))
+            self.model.load_weights(os.path.join(model_path,'models','model_weights_.h5f'))
         else:
             self.model = self._build_model()
 
@@ -305,7 +317,7 @@ def train_world_model(model_path,epoch = 10000):
     logger.save_model_arch(model)
     logger.save_weights(model)
 
-def test_world_model():
+def test_world_model(world_path,model_path):
 
     config = tf.ConfigProto(
         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
@@ -314,9 +326,9 @@ def test_world_model():
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    sp = state_predictor(model_path='result_WORLD/191030_151254/models')
+    sp = state_predictor(model_path=os.path.join(world_path,'models'))
 
-    mg = Memory_generator(root_path = 'model')
+    mg = Memory_generator(root_path = model_path)
     mg.restore_memories()
     states,actions,rewards,state_s = mg.sample_memories(batch_size = 10,test=True)
 
@@ -336,7 +348,7 @@ def test_world_model():
 
     plt.show()
 
-def test_world_model_2(prediction_steps = 5):
+def test_world_model_2(world_path,model_path,prediction_steps = 5):
     config = tf.ConfigProto(
         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
     )
@@ -344,11 +356,13 @@ def test_world_model_2(prediction_steps = 5):
     sess = tf.Session(config=config)
     K.set_session(sess)
 
-    sp = state_predictor(model_path='result_WORLD/191030_151254/models')
+    sp = state_predictor(model_path=world_path)
 
-    mg = Memory_generator(root_path = 'model')
+    mg = Memory_generator(root_path = model_path)
     mg.restore_memories()
     state,one_hot_action,state_ = mg.sample_memories_MultiStep(prediction_steps=prediction_steps)
+
+    state_=np.array(state_)
     
     predicted_frames = []
     current_input_state = state
@@ -375,6 +389,10 @@ def test_world_model_2(prediction_steps = 5):
     plt.show()
 
 
+def distill_with_world_model():
+    pass
+
+
     
 
 
@@ -385,4 +403,5 @@ if __name__ == "__main__":
     # mg.restore_memories()
     # mg.sample_memories(32)
     # mg.sample_memories(32,test=True)
-    train_world_model('result/191031_023139',epoch=50000)
+    train_world_model('result/191031_023139',epoch=100000)
+    # test_world_model_2('result_WORLD/191031_165232','result/191031_023139')

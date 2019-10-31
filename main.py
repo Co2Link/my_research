@@ -87,7 +87,7 @@ def test(logger):
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH,MEMORY_SIZE_STORATION)
 
     runner.train(
         ddqn_agent,
