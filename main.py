@@ -27,7 +27,7 @@ def ddqn_main(logger):
     )
 
     ddqn_agent = DDQN(
-        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, IS_LOAD_MODEL, MEMORY_SIZE_STORATION
+        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH, MEMORY_SIZE_STORATION
     )
 
     runner.train(
@@ -87,7 +87,7 @@ def test(logger):
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, IS_LOAD_MODEL)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH)
 
     runner.train(
         ddqn_agent,
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
     parser.add_argument("--no_scale", action="store_false")
     parser.add_argument("--net_size",type = str,default="normal")
-    parser.add_argument("--is_load_model", action="store_true")
+    parser.add_argument("--load_model_path", type=str,default="")
     parser.add_argument("--info",type=str,default='')
     parser.add_argument("--memory_size_storation", type=int,default=100000)
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     SCALE = args.no_scale
     ROOT_PATH = args.root
     NET_SIZE = args.net_size
-    IS_LOAD_MODEL = args.is_load_model
+    LOAD_MODEL_PATH = args.load_model_path
     MEMORY_SIZE_STORATION = args.memory_size_storation
 
     assert MEMORY_SIZE_STORATION < MAX_ITERATION,'MEMORY_SIZE_STORATION < MAX_ITERATION'

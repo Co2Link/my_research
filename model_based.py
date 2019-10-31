@@ -134,8 +134,8 @@ class Memory_generator:
 
 
         # scale
-        state = np.array(state).astype(np.float32)/255.0
-        state_ = np.array(state_).astype(np.float32)/255.0
+        # state = np.array(state).astype(np.float32)/255.0
+        # state_ = np.array(state_).astype(np.float32)/255.0
         one_hot_action = np.array(one_hot_action)
         return state,one_hot_action,state_
 
@@ -356,8 +356,8 @@ def test_world_model_2(prediction_steps = 5):
     for i in range(prediction_steps):
         predicted_frame = sp.predict(np.expand_dims(current_input_state,axis=0),np.expand_dims(one_hot_action[i],axis=0))
         predicted_frames.append(predicted_frame)
-        current_input_state = np.concatenate((current_input_state[:,:,:3],predicted_frame.reshape((84,84,1))),axis=2)
-        print(current_input_state.shape)
+        current_input_state = np.concatenate((current_input_state[:,:,1:],predicted_frame.reshape((84,84,1))),axis=2)
+        # print(current_input_state.shape)
 
     predicted_frames = np.squeeze(np.array(predicted_frames))
     
@@ -380,9 +380,10 @@ def test_world_model_2(prediction_steps = 5):
 
 
 if __name__ == "__main__":
-    root_path = 'result/191031_012825'
+    # root_path = 'result/191031_012825'
 
-    mg = Memory_generator(root_path)
-    mg.restore_memories()
-    mg.sample_memories(32)
-    mg.sample_memories(32,test=True)
+    # mg = Memory_generator(root_path)
+    # mg.restore_memories()
+    # mg.sample_memories(32)
+    # mg.sample_memories(32,test=True)
+    test_world_model_2()

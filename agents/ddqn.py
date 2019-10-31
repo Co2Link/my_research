@@ -4,12 +4,14 @@ from collections import deque,namedtuple
 
 from keras.optimizers import Adam, RMSprop
 from keras import backend as K
+from keras.models import model_from_json
 import tensorflow as tf
 
 from util.env_util import gather_numpy, scatter_numpy
 from agents.base import Agent,MemoryStorer
 
 import time
+import os
 from tqdm import tqdm
 
 
@@ -30,7 +32,7 @@ class DDQN(Agent,MemoryStorer):
     except this implementation has Double-Q-Learning and a different optimizer
     """
 
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, net_size, is_load_model,memory_size_storation):
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, net_size, load_model_path,memory_size_storation):
         Agent.__init__(self, env, logger)
         MemoryStorer.__init__(self,memory_size_storation)
 
@@ -49,8 +51,10 @@ class DDQN(Agent,MemoryStorer):
             self.model = self.build_CNN_model(self.state_shape, self.action_num, "model")
             self.target = self.build_CNN_model(self.state_shape, self.action_num, "target")
 
-        if is_load_model:
-            self.model.load_weights('./model/loaded_model.h5f')
+        if load_model_path:
+            with open(os.path.join(load_model_path,'models','model_arch.json'),'r') as f:
+                self.model = model_from_json(f.read())
+            self.model.load_weights(os.path.join(load_model_path,'models','model_weights_final.h5f'))
         self.model.compile(optimizer=Adam(lr), loss=huberloss)
         self.target.compile(optimizer=Adam(lr), loss="mse")
         self.max_memory_size = int(memory_size)

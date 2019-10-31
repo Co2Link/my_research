@@ -2,12 +2,15 @@ import numpy as np
 import os
 import csv
 import time
+import pickle
+import random
 from tqdm import tqdm
 from atari_wrappers import wrap_deepmind, make_atari
 import tensorflow as tf
 from keras import backend as K
 from collections import deque
 from agents.base import Agent
+from keras.models import model_from_json
 
 MODEL_PATH = '../model/teacher'
 GAME_Breakout = 'BreakoutNoFrameskip-v4'  # discrete(4)
@@ -174,6 +177,78 @@ class Teacher(Agent):
             for ep_reward in self.ep_rewards:
                 writer.writerow((ep_reward,))
 
+class Teacher_world_model(object):
+
+    def __init__(self,agent_model_path,world_model_path,mem_size=100000):
+
+        # load agent model
+        with open(os.path.join(agent_model_path,'models','model_arch.json'),'r') as f:
+            self.agent_model = model_from_json(f.read())
+        self.agent_model.load_weights(os.path.join(agent_model_path,'models','model_weights_final.h5f'))
+        
+        # load world model
+        with open(os.path.join(agent_model_path,'models','model_arch.json'),'r') as f:
+            self.world_model = model_from_json(f.read())
+        self.world_model.load_weights(os.path.join(agent_model_path,'models','model_weights_.h5f'))
+
+        # load true memories
+        with open(os.path.join(agent_model_path,'memories.pkl'),'rb') as f:
+            self.t_m = pickle.load(f)
+
+        # Memory
+        self.i_m = [] # input
+        self.o_m = [] # output
+
+        self.mem_gen = self._memory_generator()
+
+        for _ in range(mem_size):
+            state,output = next(self.mem_gen)  # (84,84,4)  (4,)
+            self.i_m.append(state)
+            self.o_m.append(output)
+
+    def _memory_generator(self):
+
+        while True:
+            state = random.sample(self.t_m,1)[0]
+
+            for _ in range(100):
+
+                if 0.05 <= np.random.uniform(0, 1):
+                    action, output = self._select_action_output_logit(state)
+                    # generate memory
+                    yield state, output
+                else:
+                    action = random.randint(0,3)
+
+                # one-hot encoding
+                one_hot_action = np.zeros((1,4))
+                one_hot_action[0,action] = 1
+
+
+                state_ = self.world_model.predict_on_batch(x = {'frames':state,'actions':one_hot_action})
+
+                state_ = np.concatenate(state[:,:,1:],state_.reshape((84,84,1)),axis=2)
+
+                state = state_ 
+    def sample_memories(self,size=32):   # bug
+        index = np.random.choice(len(self.s_m), size)
+        index = list(index)
+
+        i_batch = [self.i_m[ind] for ind in index]
+        o_batch = [self.o_m[ind] for ind in index]
+
+        return s_batch, o_batch #
+
+    def _select_action_output_logit(self, state):
+        """ return the selected action and the output logit """
+
+        state = self._LazyFrame2array(state)
+        output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()
+
+        return np.argmax(output), output
+
+    def _LazyFrame2array(self, lazyframe):
+        return np.array(lazyframe)
 
 def DEBUG():
     # keras setup
