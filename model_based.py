@@ -106,7 +106,10 @@ class Memory_generator:
 
         one_hot_actions = np.zeros((batch_size,self.action_space_size))
         one_hot_actions[np.arange(batch_size),actions] = 1
-        
+
+        # scale
+        states = np.array(states).astype(np.float32)/255.0
+        state_s = np.array(state_s).astype(np.float32)/255.0
         return states,one_hot_actions,rewards,state_s
 
     def sample_memories_MultiStep(self,prediction_steps = 1):
@@ -134,8 +137,8 @@ class Memory_generator:
 
 
         # scale
-        # state = np.array(state).astype(np.float32)/255.0
-        # state_ = np.array(state_).astype(np.float32)/255.0
+        state = np.array(state).astype(np.float32)/255.0
+        state_ = np.array(state_).astype(np.float32)/255.0
         one_hot_action = np.array(one_hot_action)
         return state,one_hot_action,state_
 
@@ -265,7 +268,7 @@ class state_predictor:
         with open(path_with_file_name + '.json','w') as json_file:
             json_file.write(self.model.to_json())
 
-def train_world_model(train_memory_size = 10000, test_memory_size = 1000, epoch = 10000, restore_memories=False):
+def train_world_model(model_path,epoch = 10000):
     batch_size = 32
     action_space_size = 4
     ROOT_PATH = 'result_WORLD'
@@ -279,15 +282,11 @@ def train_world_model(train_memory_size = 10000, test_memory_size = 1000, epoch 
 
     logger = LogWriter(ROOT_PATH,batch_size)
 
-    gen = Memory_generator('model',train_memory_size,test_memory_size)
+    gen = Memory_generator(model_path)
 
     
-    if restore_memories:
-        print('restore memories')
-        gen.restore_memories()
-    else:
-        print('generating memories')
-        gen.generate_memories(store=True)
+    print('restore memories')
+    gen.restore_memories()
 
     model = state_predictor()
 
@@ -386,4 +385,4 @@ if __name__ == "__main__":
     # mg.restore_memories()
     # mg.sample_memories(32)
     # mg.sample_memories(32,test=True)
-    test_world_model_2()
+    train_world_model('result/191031_023139',epoch=50000)
