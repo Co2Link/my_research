@@ -36,6 +36,8 @@ class DDQN(Agent,MemoryStorer):
         Agent.__init__(self, env, logger)
         MemoryStorer.__init__(self,memory_size_storation)
 
+        self.memory_size_storation = memory_size_storation
+
         self.batch_size = batch_size
 
         assert net_size in ['big','small','normal','super'],"net_size must be one of ['big','small','normal']"
@@ -58,6 +60,9 @@ class DDQN(Agent,MemoryStorer):
             with open(os.path.join(load_model_path,'models','model_arch.json'),'r') as f:
                 self.model = model_from_json(f.read())
             self.model.load_weights(os.path.join(load_model_path,'models','model_weights_final.h5f'))
+            with open(os.path.join(load_model_path,'models','model_arch.json'),'r') as f:
+                self.target = model_from_json(f.read())
+            self.target.load_weights(os.path.join(load_model_path,'models','model_weights_final.h5f'))
         self.model.compile(optimizer=Adam(lr), loss=huberloss)
         self.target.compile(optimizer=Adam(lr), loss="mse")
         self.max_memory_size = int(memory_size)
@@ -74,7 +79,8 @@ class DDQN(Agent,MemoryStorer):
     def memorize(self, s, a, r, s_):
         """ Add memory """
         self.memories.append(Memory(s,a,r,s_))
-        self.memories_storation.append(Memory(s,a,r,s_))
+        if self.memory_size_storation:
+            self.memories_storation.append(Memory(s,a,r,s_))
 
     def select_action(self, state):
         state = self.LazyFrame2array(state)

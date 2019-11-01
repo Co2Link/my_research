@@ -12,6 +12,8 @@ import csv
 from collections import deque,namedtuple
 from keras import backend as K
 import tensorflow as tf
+from agents.teacher import Teacher_world_model
+from agents.student import SingleDtStudent_world
 
 from tqdm import tqdm
 
@@ -384,23 +386,33 @@ def test_world_model_2(world_path,model_path,prediction_steps = 5):
 
     fig = plt.figure()
 
-    rows,cols = prediction_steps,2
+    rows,cols = 2,prediction_steps
 
-    for i in range(1,rows+1):
-        fig.add_subplot(rows,cols,2*i-1).set_title('real_{}'.format(i))
+    for i in range(1,cols+1):
+        fig.add_subplot(rows,cols,i).set_title('true (k+{})'.format(i))
         plt.imshow(state_[i-1,:,:],interpolation='nearest')
-        fig.add_subplot(rows,cols,2*i).set_title('predicted_{}'.format(i))
+        fig.add_subplot(rows,cols,i+cols).set_title('pred (k+{})'.format(i))
         plt.imshow(predicted_frames[i-1,:,:],interpolation='nearest')
 
     plt.show()
 
 
-def distill_with_world_model():
-    pass
+def distill_with_world_model(agent_model_path,world_model_path,mem_size):
 
+    ROOT_PATH = 'result_DT_WORLD'
 
+    BATCH_SIZE = 32
     
+    teacher = Teacher_world_model(agent_model_path,world_model_path,mem_size)
 
+    logger = LogWriter(ROOT_PATH,BATCH_SIZE)
+
+    student = SingleDtStudent_world(teacher,logger,'big',100000,0.0001)
+
+    student.distill()
+
+    logger.save_weights(student)
+    logger.save_model_arch(student)
 
 if __name__ == "__main__":
     # root_path = 'result/191031_012825'
@@ -411,4 +423,7 @@ if __name__ == "__main__":
     # mg.sample_memories(32,test=True)
     # train_world_model('result/191031_161605',epoch=10000)
 
-    test_world_model('result_WORLD/191031_200742','result/191031_161605')
+    # test_world_model_2('result_WORLD/191031_200650','result/191031_161605')
+
+    distill_with_world_model('result/191031_161605','result_WORLD/191031_200650',100000)
+    

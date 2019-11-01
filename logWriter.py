@@ -152,4 +152,5 @@ class LogWriter():
             print('*** total_time_cost:{} ***'.format(time.time() - self.start_time))
 
     def store_memories(self,agent):
-        agent.store_memories(self.save_path)
+        if agent.memory_size_storation:
+            agent.store_memories(self.save_path)

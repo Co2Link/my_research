@@ -21,19 +21,15 @@ GAME_Pong = 'PongNoFrameskip-v4'  # discrete(6)
 class Teacher(Agent):
     """ teacher class which generate memory for student to learn """
 
-    def __init__(self, model_path, env, epsilon=0.05, mem_size=50000, eval_iteration=10000, is_small = False):
+    def __init__(self, model_path, env, epsilon=0.05, mem_size=50000, eval_iteration=10000):
         super().__init__(env, None)
         """ initiated by a trained model """
         self.env = env
 
         # load model
-        if is_small:
-            model = self.build_small_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
-        else:
-            model = self.build_CNN_model(input_shape=self.state_shape, output_num=self.action_num)
-
-        model.load_weights(model_path)
-        self.model = model
+        with open(os.path.join(model_path,'models','model_arch.json'),'r') as f:
+            self.model = model_from_json(f.read())
+        self.model.load_weights(os.path.join(model_path,'models','model_weights_final.h5f'))
 
         # Memory
         self.s_m = deque(maxlen=mem_size)  # State
@@ -49,6 +45,8 @@ class Teacher(Agent):
 
         # get model_file_name from model_path
         self.model_file_name = model_path.split('/')[-1]
+
+        self.info = model_path
 
     def select_action(self, state):
 
@@ -130,7 +128,7 @@ class Teacher(Agent):
         return np.array(lazyframe)
 
     def evaluate(self,save_path):
-        print("*** Evaluating: {} ***".format(self.model_file_name))
+        print("*** Evaluating: {} ***".format(self.info))
 
         state = self.env.reset()
 
@@ -158,7 +156,7 @@ class Teacher(Agent):
 
         # return the average reward
         avg_ep_reward = sum(self.ep_rewards) / len(self.ep_rewards)
-        print("*** avg_ep_reward of {}: {} ***".format(self.model_file_name, avg_ep_reward))
+        print("*** avg_ep_reward of {}: {} ***".format(self.info, avg_ep_reward))
 
         self.write_rewards(save_path)
 
@@ -187,9 +185,9 @@ class Teacher_world_model(object):
         self.agent_model.load_weights(os.path.join(agent_model_path,'models','model_weights_final.h5f'))
         
         # load world model
-        with open(os.path.join(agent_model_path,'models','model_arch.json'),'r') as f:
+        with open(os.path.join(world_model_path,'models','model_arch.json'),'r') as f:
             self.world_model = model_from_json(f.read())
-        self.world_model.load_weights(os.path.join(agent_model_path,'models','model_weights_.h5f'))
+        self.world_model.load_weights(os.path.join(world_model_path,'models','model_weights_.h5f'))
 
         # load true memories
         with open(os.path.join(agent_model_path,'memories.pkl'),'rb') as f:
@@ -202,7 +200,7 @@ class Teacher_world_model(object):
         self.mem_gen = self._memory_generator()
         
         print('*** generating memories ***')
-        for _ in range(mem_size):
+        for _ in tqdm(range(mem_size)):
             state,output = next(self.mem_gen)  # (84,84,4)  (4,)
             self.i_m.append(state)
             self.o_m.append(output)
@@ -210,11 +208,15 @@ class Teacher_world_model(object):
     def _memory_generator(self):
 
         while True:
-            state = random.sample(self.t_m,1)[0]
-
+            state = random.sample(self.t_m,1)[0][0]
+            state = self._LazyFrame2array(state)
+            if np.array_equal(state,np.zeros(state.shape)):
+                print('skip')
+                continue
             for _ in range(100):
 
                 if 0.05 <= np.random.uniform(0, 1):
+                    
                     action, output = self._select_action_output_logit(state)
                     # generate memory
                     yield state, output
@@ -226,9 +228,9 @@ class Teacher_world_model(object):
                 one_hot_action[0,action] = 1
 
 
-                state_ = self.world_model.predict_on_batch(x = {'frames':state,'actions':one_hot_action})
+                state_ = self.world_model.predict_on_batch(x = {'frames':np.expand_dims(self._LazyFrame2array(state),0),'actions':one_hot_action})
 
-                state_ = np.concatenate(state[:,:,1:],state_.reshape((84,84,1)),axis=2)
+                state_ = np.concatenate((state[:,:,1:],state_.reshape((84,84,1))),axis=2)
 
                 state = state_ 
     def sample_memories(self,size=32):
@@ -249,7 +251,7 @@ class Teacher_world_model(object):
         return np.argmax(output), output
 
     def _LazyFrame2array(self, lazyframe):
-        return np.array(lazyframe)
+        return np.array(lazyframe).astype(np.float32) / 255.0
 
 def DEBUG():
     # keras setup

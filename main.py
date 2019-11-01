@@ -126,6 +126,7 @@ if __name__ == "__main__":
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
     parser.add_argument("--scale", action="store_true")
+    parser.add_argument("--store_memory", action="store_true")
     parser.add_argument("--net_size",type = str,default="normal")
     parser.add_argument("--load_model_path", type=str,default="")
     parser.add_argument("--info",type=str,default='')
@@ -151,6 +152,7 @@ if __name__ == "__main__":
     NET_SIZE = args.net_size
     LOAD_MODEL_PATH = args.load_model_path
     MEMORY_SIZE_STORATION = args.memory_size_storation
+    STORE_MEMORY = args.store_memory
 
     assert MEMORY_SIZE_STORATION < MAX_ITERATION,'MEMORY_SIZE_STORATION < MAX_ITERATION'
 

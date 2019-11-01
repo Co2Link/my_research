@@ -93,7 +93,7 @@ class ModelBuilder:
         q = Dense(output_num, activation='linear', name="q")(x)
 
         return Model(inputs, q)
-
+        
     def build_super_CNN_model(self, input_shape, output_num, name="default"):
         """ build small CNN network """
         inputs = Input(shape=input_shape)

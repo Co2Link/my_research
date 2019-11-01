@@ -21,14 +21,15 @@ def SingleDistillation_main():
     env = make_atari(GAME)
     env = wrap_deepmind(env, frame_stack=True, scale=True)
 
-    teacher = Teacher(MODEL_PATH, env, EPSILON, MEM_SIZE, is_small=IS_SMALL)
+    teacher = Teacher(MODEL_PATH, env, EPSILON, MEM_SIZE)
 
     student = SingleDtStudent(env, LEARNING_RATE, logger, BATCH_SIZE, EPSILON, teacher, ADD_MEM_NUM, UPDATE_NUM, EPOCH,
-                              LOSS_FUC)
+                              LOSS_FUC,TARGET_NET_SIZE)
 
     student.distill()
 
-    logger.save_weights(student, 'student_{}'.format(LOSS_FUC))
+    logger.save_weights(student)
+    logger.save_model_arch(student)
     logger.log_total_time_cost()
 
 
@@ -72,7 +73,7 @@ def Evaluation_deprecate():
 
 
 def Evaluation():
-    files_pathes = glob.glob('./model/evaluation/*')
+    files_pathes = glob.glob('./model/evaluation/world_*')
 
     print(files_pathes)
 
@@ -118,7 +119,7 @@ def test():
     teacher = Teacher(MODEL_PATH, env, EPSILON, MEM_SIZE, EVAL_ITERATION)
 
     student = SingleDtStudent(env, LEARNING_RATE, logger, BATCH_SIZE, EPSILON, teacher, ADD_MEM_NUM, UPDATE_NUM, EPOCH,
-                              LOSS_FUC)
+                              LOSS_FUC,TARGET_NET_SIZE)
 
     student.distill()
 
@@ -160,11 +161,11 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str,
                         default='./model/teacher/breakout-1.h5f')
     parser.add_argument('--loss_fuc', type=str, default='kld')
+    parser.add_argument('--target_net_size', type=str, default='big')
     parser.add_argument('--test', action='store_true')
     parser.add_argument('-eval', '--evaluate', action='store_true')
     parser.add_argument('-dt', '--distillate', action='store_true')
     parser.add_argument('--eval_iteration', type=int, default=int(1e5))
-    parser.add_argument('--is_small', action='store_true')
     args = parser.parse_args()
 
     LEARNING_RATE = args.learning_rate
@@ -179,7 +180,7 @@ if __name__ == '__main__':
     MODEL_PATH = args.model_path
     LOSS_FUC = args.loss_fuc
     EVAL_ITERATION = args.eval_iteration
-    IS_SMALL = args.is_small
+    TARGET_NET_SIZE = args.target_net_size
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
     sess = tf.Session(config=config)
