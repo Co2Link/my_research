@@ -43,7 +43,7 @@ def ddqn_main(logger):
 
     if logger is not None:
         # Save the final model
-        logger.save_weights(ddqn_agent, -1)
+        logger.save_weights(ddqn_agent, '-1')
         # Record the total used time
         logger.log_total_time_cost()
         # save the final weight
@@ -100,7 +100,7 @@ def test(logger):
 
     if logger is not None:
         # Save the final model
-        logger.save_weights(ddqn_agent, -1)
+        logger.save_weights(ddqn_agent, '-1')
         # Record the total used time
         logger.log_total_time_cost()
 

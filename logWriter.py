@@ -7,29 +7,29 @@ import tensorflow as tf
 
 
 class LogWriter():
-    def __init__(self, root, batch_size, histogram_freq=0, write_graph=True, write_grads=False):
+    def __init__(self, root_dir, batch_size, histogram_freq=0, write_graph=True, write_grads=False):
 
-        self.root = root
+        self.root_dir = root_dir
 
         self.start_time = time.time()
 
-        if not os.path.exists(self.root):
-            os.mkdir(self.root)
-            print('*** Create folder: {} ***'.format(self.root))
+        if not os.path.exists(self.root_dir):
+            os.mkdir(self.root_dir)
+            print('*** Create folder: {} ***'.format(self.root_dir))
 
         now_time = time.strftime('%y%m%d_%H%M%S', time.localtime())
-        self.save_path = os.path.join(self.root, now_time).replace('\\', '/')
-        if not os.path.exists(self.save_path):
-            os.mkdir(self.save_path)
-            print('*** Create folder: {} ***'.format(self.save_path))
+        self.root_dir_with_datetime = os.path.join(self.root_dir, now_time).replace('\\', '/')
+        if not os.path.exists(self.root_dir_with_datetime):
+            os.mkdir(self.root_dir_with_datetime)
+            print('*** Create folder: {} ***'.format(self.root_dir_with_datetime))
 
-        os.mkdir(os.path.join(self.save_path, "logs").replace('\\', '/'))
-        os.mkdir(os.path.join(self.save_path, "csv").replace('\\', '/'))
-        os.mkdir(os.path.join(self.save_path, "models").replace('\\', '/'))
-        os.mkdir(os.path.join(self.save_path, "movies").replace('\\', '/'))
+        os.mkdir(os.path.join(self.root_dir_with_datetime, "logs").replace('\\', '/'))
+        os.mkdir(os.path.join(self.root_dir_with_datetime, "csv").replace('\\', '/'))
+        os.mkdir(os.path.join(self.root_dir_with_datetime, "models").replace('\\', '/'))
+        os.mkdir(os.path.join(self.root_dir_with_datetime, "movies").replace('\\', '/'))
 
         self.tb = TensorBoard(
-            log_dir=os.path.join(self.save_path, "logs").replace('\\', '/'),
+            log_dir=os.path.join(self.root_dir_with_datetime, "logs").replace('\\', '/'),
             histogram_freq=histogram_freq,
             batch_size=batch_size,
             write_graph=write_graph,
@@ -46,7 +46,7 @@ class LogWriter():
         self.iteration = 1
 
     def get_movie_pass(self):
-        return os.path.join(self.save_path, "movies").replace('\\', '/')
+        return os.path.join(self.root_dir_with_datetime, "movies").replace('\\', '/')
 
     def add_loss(self, losses):
         # log losses into tensorboard
@@ -58,7 +58,7 @@ class LogWriter():
             self.tb.on_epoch_end(self.batch_id)
 
         # log losses into csv
-        with open(os.path.join(self.save_path, 'csv', 'loss.csv').replace('\\', '/'), 'a', newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime, 'csv', 'loss.csv').replace('\\', '/'), 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([self.batch_id, *losses])
 
@@ -67,7 +67,7 @@ class LogWriter():
     def set_loss_name(self, names):
         """ set the first row for loss.csv """
         self.loss_names = names
-        with open(os.path.join(self.save_path, 'csv', 'loss.csv').replace('\\', '/'), 'w', newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime, 'csv', 'loss.csv').replace('\\', '/'), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(self.loss_names)
 
@@ -86,7 +86,7 @@ class LogWriter():
         if self.max_reward < reward:
             self.max_reward = reward
 
-        with open(os.path.join(self.save_path, 'csv', 'max_reward.csv').replace('\\', '/'), 'a', newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime, 'csv', 'max_reward.csv').replace('\\', '/'), 'a', newline='') as f:
             writer = csv.writer(f)
             summary = tf.Summary()
             summary.value.add(tag="max_episode_reward",
@@ -98,7 +98,7 @@ class LogWriter():
             self.tb.writer.flush()
 
         # log episode_reward
-        with open(os.path.join(self.save_path, 'csv', 'reward.csv').replace('\\', '/'), 'a', newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime, 'csv', 'reward.csv').replace('\\', '/'), 'a', newline='') as f:
 
             # log episode_reward into tensorboard
             summary = tf.Summary()
@@ -116,15 +116,15 @@ class LogWriter():
         self.iteration += 1
 
     def save_weights(self, agent, info = ''):
-        agent.save_weights(info, os.path.join(
-            self.save_path, 'models').replace('\\', '/'))
+        agent.save_weights(os.path.join(
+            self.root_dir_with_datetime, 'models').replace('\\', '/'),info)
 
     def save_model_arch(self, agent):
         agent.save_model_arch(os.path.join(
-            self.save_path, 'models').replace('\\', '/'))
+            self.root_dir_with_datetime, 'models').replace('\\', '/'))
 
     def save_evaluate_rewards(self,evaluate_rewards):
-        with open(os.path.join(self.save_path,'evaluate_rewards.csv').replace('\\','/'),'w',newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime,'evaluate_rewards.csv').replace('\\','/'),'w',newline='') as f:
             writer = csv.writer(f)
 
             # write the avg_eps_reward at the first line
@@ -138,7 +138,7 @@ class LogWriter():
         self.tb.set_model(model)
 
     def save_setting(self, args):
-        with open(os.path.join(self.save_path, 'setting.csv').replace('\\', '/'), 'w', newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime, 'setting.csv').replace('\\', '/'), 'w', newline='') as f:
             writer = csv.writer(f)
             for k, v in vars(args).items():
                 writer.writerow((k, v))
@@ -146,11 +146,11 @@ class LogWriter():
 
     def log_total_time_cost(self):
         """ Call it at the end of the code """
-        with open(os.path.join(self.save_path, 'setting.csv').replace('\\', '/'), 'a', newline='') as f:
+        with open(os.path.join(self.root_dir_with_datetime, 'setting.csv').replace('\\', '/'), 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(('total_time_cost', time.time() - self.start_time))
             print('*** total_time_cost:{} ***'.format(time.time() - self.start_time))
 
     def store_memories(self,agent):
         if agent.memory_size_storation:
-            agent.store_memories(self.save_path)
+            agent.store_memories(self.root_dir_with_datetime)
