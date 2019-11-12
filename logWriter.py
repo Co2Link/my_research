@@ -2,7 +2,7 @@ import os
 import time
 import csv
 
-from keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import TensorBoard
 import tensorflow as tf
 
 
@@ -36,6 +36,8 @@ class LogWriter():
             write_grads=write_grads
         )
 
+        self.tb_writer = tf.summary.create_file_writer(os.path.join(self.root_dir_with_datetime, "logs"))
+
         # count batch
         self.batch_id = 0
 
@@ -51,10 +53,8 @@ class LogWriter():
     def add_loss(self, losses):
         # log losses into tensorboard
         for loss, name in zip(losses, self.loss_names):
-            summary = tf.Summary()
-            summary.value.add(tag=name, simple_value=loss)
-            self.tb.writer.add_summary(summary, self.batch_id)
-            self.tb.writer.flush()
+            with self.tb_writer.as_default():
+                tf.summary.scalar(name,loss,step=self.batch_id)
             self.tb.on_epoch_end(self.batch_id)
 
         # log losses into csv
@@ -86,26 +86,26 @@ class LogWriter():
         if self.max_reward < reward:
             self.max_reward = reward
 
+        
+
         with open(os.path.join(self.root_dir_with_datetime, 'csv', 'max_reward.csv').replace('\\', '/'), 'a', newline='') as f:
             writer = csv.writer(f)
-            summary = tf.Summary()
-            summary.value.add(tag="max_episode_reward",
-                              simple_value=self.max_reward)
+            # summary = tf.Summary()
+            # summary.value.add(tag="max_episode_reward",
+            #                   simple_value=self.max_reward)
             for i in range(info['steps']):
                 iteration = self.iteration - info['steps'] + i
-                self.tb.writer.add_summary(summary, iteration)
+                with self.tb_writer.as_default():
+                    tf.summary.scalar('max_episode_reward',self.max_reward,step = iteration)
                 writer.writerow((iteration, self.max_reward))
-            self.tb.writer.flush()
 
         # log episode_reward
         with open(os.path.join(self.root_dir_with_datetime, 'csv', 'reward.csv').replace('\\', '/'), 'a', newline='') as f:
 
             # log episode_reward into tensorboard
-            summary = tf.Summary()
-            summary.value.add(tag="episode_reward",
-                              simple_value=reward)  # change
-            self.tb.writer.add_summary(summary, episode)
-            self.tb.writer.flush()
+
+            with self.tb_writer.as_default():
+                tf.summary.scalar('episode_reward',reward,step=episode)
 
             # log episode_reward into csv
             writer = csv.writer(f)

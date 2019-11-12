@@ -3,10 +3,13 @@ from gym import wrappers
 from agents.ddqn import DDQN
 from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
-from keras import backend as K
+# from tensorflow.keras import backend as K
 import tensorflow as tf
 import time
 from atari_wrappers import *
+
+# disable eager execution,otherwise the output is EagerTensor instead of numpy.Array
+tf.compat.v1.disable_eager_execution()
 
 def ddqn_main(logger):
     # make environment
@@ -156,11 +159,11 @@ if __name__ == "__main__":
 
     assert MEMORY_SOTRATION_SIZE < MAX_ITERATION,'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
 
-    config = tf.ConfigProto(
-        gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu)
-    )
-    sess = tf.Session(config=config)
-    K.set_session(sess)
+    # config = tf.ConfigProto(
+    #     gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu)
+    # )
+    # sess = tf.Session(config=config)
+    # K.set_session(sess)
 
     logger = LogWriter(ROOT_PATH, BATCH_SIZE)
     logger.save_setting(args)

@@ -2,9 +2,12 @@ import os
 import time
 import pickle
 
-from keras import Sequential
-from keras.layers import Dense, Input, Conv2D, Flatten
-from keras.models import Model
+# from keras import Sequential
+# from keras.layers import Dense, Input, Conv2D, Flatten
+# from keras.models import Model
+from tensorflow import keras
+from tensorflow.keras import Model,Input
+from tensorflow.keras.layers import Dense,Conv2D,Flatten
 
 from abc import ABCMeta, abstractmethod
 from collections import deque

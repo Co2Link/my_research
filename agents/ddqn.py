@@ -2,9 +2,9 @@ import random
 import numpy as np
 from collections import deque,namedtuple
 
-from keras.optimizers import Adam, RMSprop
-from keras import backend as K
-from keras.models import model_from_json
+from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import model_from_json
 import tensorflow as tf
 
 from util.env_util import gather_numpy, scatter_numpy
