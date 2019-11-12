@@ -27,7 +27,7 @@ def ddqn_main(logger):
     )
 
     ddqn_agent = DDQN(
-        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH, MEMORY_SIZE_STORATION
+        env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH, MEMORY_SOTRATION_SIZE
     )
 
     runner.train(
@@ -87,7 +87,7 @@ def test(logger):
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH,MEMORY_SIZE_STORATION)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH,MEMORY_SOTRATION_SIZE)
 
     runner.train(
         ddqn_agent,
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("--net_size",type = str,default="normal")
     parser.add_argument("--load_model_path", type=str,default="")
     parser.add_argument("--info",type=str,default='')
-    parser.add_argument("--memory_size_storation", type=int,default=100000)
+    parser.add_argument("--memory_storation_size", type=int,default=100000)
 
     args = parser.parse_args()
 
@@ -151,10 +151,10 @@ if __name__ == "__main__":
     ROOT_PATH = args.root
     NET_SIZE = args.net_size
     LOAD_MODEL_PATH = args.load_model_path
-    MEMORY_SIZE_STORATION = args.memory_size_storation
+    MEMORY_SOTRATION_SIZE = args.memory_storation_size
     STORE_MEMORY = args.store_memory
 
-    assert MEMORY_SIZE_STORATION < MAX_ITERATION,'MEMORY_SIZE_STORATION < MAX_ITERATION'
+    assert MEMORY_SOTRATION_SIZE < MAX_ITERATION,'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
 
     config = tf.ConfigProto(
         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list=args.gpu)

@@ -32,11 +32,11 @@ class DDQN(Agent,MemoryStorer):
     except this implementation has Double-Q-Learning and a different optimizer
     """
 
-    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, net_size, load_model_path,memory_size_storation):
+    def __init__(self, env, lr, gamma, logger, memory_size, batch_size, scale, net_size, load_model_path,memory_storation_size):
         Agent.__init__(self, env, logger)
-        MemoryStorer.__init__(self,memory_size_storation)
+        MemoryStorer.__init__(self,memory_storation_size)
 
-        self.memory_size_storation = memory_size_storation
+        self.memory_storation_size = memory_storation_size
 
         self.batch_size = batch_size
 
@@ -79,9 +79,8 @@ class DDQN(Agent,MemoryStorer):
     def memorize(self, s, a, r, s_):
         """ Add memory """
         self.memories.append(Memory(s,a,r,s_))
-        if self.memory_size_storation:
-            self.memories_storation.append(Memory(s,a,r,s_))
-
+        if self.memory_storation_size:
+            self.add_memory_to_storation(Memory(s,a,r,s_))
     def select_action(self, state):
         state = self.LazyFrame2array(state)
         output = self.model.predict_on_batch(np.expand_dims(state, axis=0)).ravel()

@@ -1,5 +1,14 @@
+from collections import deque
+from util.ringbuf import RingBuf
+from util.decorators import timethis
 
-suffix='abc'
-suffix = '_'+suffix if suffix else '_'
+@timethis
+def test():
+    d = RingBuf(maxlen=100000)
 
-print(suffix)
+    for i in range(200000):
+        d.append(1)
+
+
+if __name__ == "__main__":
+    test()

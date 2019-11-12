@@ -105,7 +105,7 @@ class Memory_generator:
         with open(os.path.join(self.root_path,'setting.csv'), newline='') as f:
             reader = csv.reader(f)
             setting_dict = {row[0]: row[1] for row in reader}
-        self.memory_size = int(setting_dict['memory_size_storation'])
+        self.memory_size = int(setting_dict['memory_storation_size'])
         self.train_memory_size = int(len(self.memories)*9/10)
         self.test_memory_size = int(len(self.memories)/10)
         print('*** traning size: {},testing size: {}'.format(self.train_memory_size,self.test_memory_size))
