@@ -1,7 +1,3 @@
-from keras import Sequential
-from keras.layers import Dense,Input,Conv2D,Flatten,Reshape,Multiply,Conv2DTranspose,Lambda
-from keras.models import Model,model_from_json
-from keras.optimizers import Adam
 import gym
 import os
 import time
@@ -10,10 +6,10 @@ import random
 import pickle
 import csv
 from collections import deque,namedtuple
-from keras import backend as K
-import tensorflow as tf
 from agents.teacher import Teacher_world_model
 from agents.student import SingleDtStudent_world
+
+import torch
 
 from tqdm import tqdm
 
@@ -271,6 +267,7 @@ class state_predictor:
             os.remove(path_with_file_name + ".h5f")
 
         self.model.save_weights(path_with_file_name + ".h5f")
+        
 
         self.model_file_name = (path_with_file_name + '.h5f').split('/')[-1]
     

@@ -1,14 +1,7 @@
-from collections import deque
-from util.ringbuf import RingBuf
-from util.decorators import timethis
+import torch
 
-@timethis
-def test():
-    d = RingBuf(maxlen=100000)
+a = torch.rand(4,4)
 
-    for i in range(200000):
-        d.append(1)
+print(a)
 
-
-if __name__ == "__main__":
-    test()
+print(torch.argmax(a))

@@ -59,7 +59,7 @@ class Normal_runner(RL_runner):
                 # log
                 if self.logger is not None:
                     if self.episode % self.save_model_interval == 0:
-                        self.logger.save_weights(agent, str(self.episode))
+                        self.logger.save_model(agent, str(self.episode))
 
                     self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
                         self.eps_start + (self.eps_end - self.eps_start) * fraction)})
@@ -83,7 +83,7 @@ class Normal_runner(RL_runner):
     def train(self, agent, env, max_iter, batch_size, warmup=0, target_update_interval=0):
         """ train the agent """
 
-        self.logger.save_model_arch(agent)
+        # self.logger.save_model_arch(agent)
 
         traj_gen = self.traj_generator(agent, env)
 
@@ -104,7 +104,7 @@ class Normal_runner(RL_runner):
             if i % 1000 == 0 and i != 0:
                 # check time cost
                 print("*** 1e3 iteration cost: {:.5f}, memory size: {:,}, *** ,Progress: {:.2f}% ***".format(
-                    time.time() - start_time, agent.memory_size(), i * 100 / max_iter))
+                    time.time() - start_time, agent.get_memories_size(), i * 100 / max_iter))
                 start_time = time.time()
 
 

@@ -2,10 +2,6 @@ import os
 import time
 import csv
 
-from keras.callbacks import TensorBoard
-import tensorflow as tf
-
-
 class LogWriter():
     def __init__(self, root_dir, batch_size, histogram_freq=0, write_graph=True, write_grads=False):
 
@@ -28,14 +24,6 @@ class LogWriter():
         os.mkdir(os.path.join(self.root_dir_with_datetime, "models").replace('\\', '/'))
         os.mkdir(os.path.join(self.root_dir_with_datetime, "movies").replace('\\', '/'))
 
-        self.tb = TensorBoard(
-            log_dir=os.path.join(self.root_dir_with_datetime, "logs").replace('\\', '/'),
-            histogram_freq=histogram_freq,
-            batch_size=batch_size,
-            write_graph=write_graph,
-            write_grads=write_grads
-        )
-
         # count batch
         self.batch_id = 0
 
@@ -49,13 +37,6 @@ class LogWriter():
         return os.path.join(self.root_dir_with_datetime, "movies").replace('\\', '/')
 
     def add_loss(self, losses):
-        # log losses into tensorboard
-        for loss, name in zip(losses, self.loss_names):
-            summary = tf.Summary()
-            summary.value.add(tag=name, simple_value=loss)
-            self.tb.writer.add_summary(summary, self.batch_id)
-            self.tb.writer.flush()
-            self.tb.on_epoch_end(self.batch_id)
 
         # log losses into csv
         with open(os.path.join(self.root_dir_with_datetime, 'csv', 'loss.csv').replace('\\', '/'), 'a', newline='') as f:
@@ -88,24 +69,12 @@ class LogWriter():
 
         with open(os.path.join(self.root_dir_with_datetime, 'csv', 'max_reward.csv').replace('\\', '/'), 'a', newline='') as f:
             writer = csv.writer(f)
-            summary = tf.Summary()
-            summary.value.add(tag="max_episode_reward",
-                              simple_value=self.max_reward)
             for i in range(info['steps']):
                 iteration = self.iteration - info['steps'] + i
-                self.tb.writer.add_summary(summary, iteration)
                 writer.writerow((iteration, self.max_reward))
-            self.tb.writer.flush()
 
         # log episode_reward
         with open(os.path.join(self.root_dir_with_datetime, 'csv', 'reward.csv').replace('\\', '/'), 'a', newline='') as f:
-
-            # log episode_reward into tensorboard
-            summary = tf.Summary()
-            summary.value.add(tag="episode_reward",
-                              simple_value=reward)  # change
-            self.tb.writer.add_summary(summary, episode)
-            self.tb.writer.flush()
 
             # log episode_reward into csv
             writer = csv.writer(f)
@@ -115,13 +84,14 @@ class LogWriter():
         """ count the iteration """
         self.iteration += 1
 
-    def save_weights(self, agent, info = ''):
-        agent.save_weights(os.path.join(
+    def save_model(self, agent, info = ''):
+        print(self.root_dir_with_datetime)
+        agent.save_model(os.path.join(
             self.root_dir_with_datetime, 'models').replace('\\', '/'),info)
 
-    def save_model_arch(self, agent):
-        agent.save_model_arch(os.path.join(
-            self.root_dir_with_datetime, 'models').replace('\\', '/'))
+    # def save_model_arch(self, agent):
+    #     agent.save_model_arch(os.path.join(
+    #         self.root_dir_with_datetime, 'models').replace('\\', '/'))
 
     def save_evaluate_rewards(self,evaluate_rewards):
         with open(os.path.join(self.root_dir_with_datetime,'evaluate_rewards.csv').replace('\\','/'),'w',newline='') as f:
@@ -134,9 +104,6 @@ class LogWriter():
             for reward in evaluate_rewards:
                 writer.writerow((reward,))
             
-    def set_model(self, model):
-        self.tb.set_model(model)
-
     def save_setting(self, args):
         with open(os.path.join(self.root_dir_with_datetime, 'setting.csv').replace('\\', '/'), 'w', newline='') as f:
             writer = csv.writer(f)
