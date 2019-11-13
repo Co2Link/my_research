@@ -85,7 +85,6 @@ class LogWriter():
         self.iteration += 1
 
     def save_model(self, agent, info = ''):
-        print(self.root_dir_with_datetime)
         agent.save_model(os.path.join(
             self.root_dir_with_datetime, 'models').replace('\\', '/'),info)
 

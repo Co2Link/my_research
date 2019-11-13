@@ -103,36 +103,42 @@ class DDQN(Agent, MemoryStorer):
         s_batch, a_batch, r_batch, ns_batch = zip(*batch)
 
         s_batch = self.input_to_device(np.array(s_batch))
+        a_batch = torch.from_numpy(np.array(a_batch).reshape(-1,1)).to(device=self.device).long()
+        r_batch = torch.from_numpy(np.array(r_batch).reshape(-1, 1)).to(device=self.device).float()
         ns_batch = self.input_to_device(np.array(ns_batch))
+        
 
         # Compute
         q_model = self.model(s_batch) # (32,4) tensor
         # choose action on next_state by model-network
         action_index = torch.argmax(self.model(ns_batch),dim=1,keepdim=True) # (32,1) tensor
-        q_model = q_model.gather(1,action_index)
         # compute corresponding action-value by target-network,
         q_target = self.target(ns_batch).data.cpu().numpy() # (32,4) numpy.Array
 
         # q_targ = r when next_state == done
+        zeros = np.zeros(ns_batch[0, :, :, :].shape)
         for i in range(self.hparams['batch_size']):
-            if np.array_equal(ns_batch[i, :, :, :], np.zeros(ns_batch[i, :, :, :].shape)):
+            if np.array_equal(ns_batch[i, :, :, :],zeros ):
                 q_target[i, :] = 0
 
         q_target = torch.from_numpy(q_target).to(device=self.device)
 
         # q_target_sub = gather_numpy(
         #     q_target, 1, action_index) * self.hparams['gamma'] + np.array(r_batch).reshape(-1, 1)
-        q_target = q_target.gather(1,action_index)*self.hparams['gamma'] + torch.from_numpy(np.array(r_batch).reshape(-1, 1)).to(device=self.device).float()
+        q_target_sub = q_target.gather(1,action_index)*self.hparams['gamma'] + r_batch
 
+        q_model_sub = q_model.gather(1,a_batch)
 
-        loss = F.smooth_l1_loss(q_model,q_target)
+        loss = F.smooth_l1_loss(q_model_sub,q_target_sub)
+
+        self.optimizer.zero_grad()
 
         loss.backward()
 
         self.optimizer.step()
 
         if self.logger is not None:
-            self.logger.add_loss([loss])
+            self.logger.add_loss([loss.item()])
 
         return loss.item()
     
