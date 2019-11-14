@@ -88,10 +88,6 @@ class LogWriter():
         agent.save_model(os.path.join(
             self.root_dir_with_datetime, 'models').replace('\\', '/'),info)
 
-    # def save_model_arch(self, agent):
-    #     agent.save_model_arch(os.path.join(
-    #         self.root_dir_with_datetime, 'models').replace('\\', '/'))
-
     def save_evaluate_rewards(self,evaluate_rewards):
         with open(os.path.join(self.root_dir_with_datetime,'evaluate_rewards.csv').replace('\\','/'),'w',newline='') as f:
             writer = csv.writer(f)
@@ -117,6 +113,6 @@ class LogWriter():
             writer.writerow(('total_time_cost', time.time() - self.start_time))
             print('*** total_time_cost:{} ***'.format(time.time() - self.start_time))
 
-    def store_memories(self,agent):
-        if agent.memory_storation_size:
-            agent.store_memories(self.root_dir_with_datetime)
+    def store_memories(self,memory_storer):
+        if memory_storer:
+            memory_storer.store_memories(self.root_dir_with_datetime)

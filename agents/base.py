@@ -3,26 +3,28 @@ import time
 import pickle
 
 from abc import ABCMeta, abstractmethod
-from collections import deque
-from util.ringbuf import RingBuf
+from collections import deque,namedtuple
+
+
+Memory = namedtuple('Memory', ['state', 'action', 'reward', 'state_'])
 
 
 class MemoryStorer:
     def __init__(self, size):
-        # RingBuf is much faster when size bigger than 100000
-        self.memories_storation = RingBuf(maxlen=size)
+        self.memories = []
+        self.size = size
 
-    def add_memory_to_storation(self, memory):
+    def add_memory_to_storation(self, s, a, r, ns):
         """ add memory for storation """
-        self.memories_storation.append(memory)
+        self.memories.append(Memory(s, a, r, ns))
 
     def store_memories(self, path):
         """ save the memories as 'pkl' file """
         start_time = time.time()
         with open(os.path.join(path, 'memories.pkl'), 'wb') as f:
-            pickle.dump(list(self.memories_storation), f)
+            pickle.dump(list(self.memories), f)
         print("*** time cost for storing memories(len: {}) {} ***".format(
-            len(self.memories_storation), time.time()-start_time))
+            len(self.memories), time.time()-start_time))
 
 
 class Agent(metaclass=ABCMeta):

@@ -1,10 +1,15 @@
 import argparse
 from gym import wrappers
 from agents.ddqn import DDQN
+from agents.base import MemoryStorer
 from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
 import time
+import torch
 from atari_wrappers import *
+
+torch.set_num_threads(1)
+
 
 def ddqn_main(logger):
     # make environment
@@ -23,32 +28,32 @@ def ddqn_main(logger):
     runner = Normal_runner(
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
-    
-    hparams = {'lr':LEARNING_RATE,'gamma':GAMMA,'memory_size':MAX_MEM_LEN,'batch_size':BATCH_SIZE,'scale':SCALE,'net_size':NET_SIZE,'memory_storation_size':MEMORY_SOTRATION_SIZE,'state_shape':env.observation_space.shape,'n_actions':env.action_space.n}
 
-    ddqn_agent = DDQN(logger,LOAD_MODEL_PATH,hparams)
+    hparams = {'lr': LEARNING_RATE, 'gamma': GAMMA, 'memory_size': MAX_MEM_LEN, 'batch_size': BATCH_SIZE,
+               'scale': SCALE, 'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n}
+
+    ddqn_agent = DDQN(logger, LOAD_MODEL_PATH, hparams)
+
+    memory_storer = MemoryStorer(
+        MEMORY_SOTRATION_SIZE) if MEMORY_SOTRATION_SIZE else None
+
     runner.train(
         ddqn_agent,
+        memory_storer,
         env,
         MAX_ITERATION,
         BATCH_SIZE,
-        warmup=WARMUP,
-        target_update_interval=TARGET_UPDATE,
+        WARMUP,
+        TARGET_UPDATE,
     )
-
-    
 
     if logger is not None:
         # Save the final model
-        logger.save_weights(ddqn_agent, '-1')
+        logger.save_model(ddqn_agent, '-1')
         # Record the total used time
         logger.log_total_time_cost()
-        # save the final weight
-        logger.save_weights(ddqn_agent,'final')
         # save the memories
-        logger.store_memories(ddqn_agent)
-        # evaluate the model
-        logger.save_evaluate_rewards(ddqn_agent.evaluate())
+        logger.store_memories(memory_storer)
 
 
 def test(logger):
@@ -84,7 +89,8 @@ def test(logger):
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN, BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH,MEMORY_SOTRATION_SIZE)
+    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN,
+                      BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH, MEMORY_SOTRATION_SIZE)
 
     runner.train(
         ddqn_agent,
@@ -124,10 +130,10 @@ if __name__ == "__main__":
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
     parser.add_argument("--scale", action="store_true")
     parser.add_argument("--store_memory", action="store_true")
-    parser.add_argument("--net_size",type = str,default="normal")
-    parser.add_argument("--load_model_path", type=str,default="")
-    parser.add_argument("--info",type=str,default='')
-    parser.add_argument("--memory_storation_size", type=int,default=100000)
+    parser.add_argument("--net_size", type=str, default="normal")
+    parser.add_argument("--load_model_path", type=str, default="")
+    parser.add_argument("--info", type=str, default='')
+    parser.add_argument("--memory_storation_size", type=int, default=100000)
 
     args = parser.parse_args()
 
@@ -149,9 +155,8 @@ if __name__ == "__main__":
     NET_SIZE = args.net_size
     LOAD_MODEL_PATH = args.load_model_path
     MEMORY_SOTRATION_SIZE = args.memory_storation_size
-    STORE_MEMORY = args.store_memory
 
-    # assert MEMORY_SOTRATION_SIZE < MAX_ITERATION,'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
+    assert MEMORY_SOTRATION_SIZE < MAX_ITERATION,'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
 
     logger = LogWriter(ROOT_PATH, BATCH_SIZE)
     logger.save_setting(args)

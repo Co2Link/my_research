@@ -11,16 +11,16 @@ class Nature_CNN(nn.Module):
     def __init__(self, n_actions, size='normal'):
 
         Size = {'normal': 1, 'big': 2, 'super': 4, 'small': 0.5}
-        n = int(Size[size])
+        n = Size[size]
 
         super(Nature_CNN, self).__init__()
-        self.conv1 = nn.Conv2d(4, 32*n, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32*n, 64*n,
+        self.conv1 = nn.Conv2d(4, int(32*n), kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(int(32*n), int(64*n),
                                kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64*n, 64*n,
+        self.conv3 = nn.Conv2d(int(64*n), int(64*n),
                                kernel_size=3, stride=1)
-        self.fc1 = nn.Linear(7*7*64*n, 512*n)
-        self.fc2 = nn.Linear(512*n, n_actions)
+        self.fc1 = nn.Linear(int(7*7*64*n), int(512*n))
+        self.fc2 = nn.Linear(int(512*n), n_actions)
 
         self.initialize_weights()
 

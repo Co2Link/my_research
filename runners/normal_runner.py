@@ -15,7 +15,6 @@ class Normal_runner(RL_runner):
         self.render = render
         self.save_model_interval = save_model_interval
 
-
     def traj_generator(self, agent, env):
         """ generate trajectory """
         state = env.reset()
@@ -80,20 +79,25 @@ class Normal_runner(RL_runner):
     def test(self, agent, env, iter=1):
         pass
 
-    def train(self, agent, env, max_iter, batch_size, warmup=0, target_update_interval=0):
+    def train(self, agent, memory_storer, env, max_iter, batch_size, warmup, target_update_interval):
         """ train the agent """
 
-        # self.logger.save_model_arch(agent)
-
         traj_gen = self.traj_generator(agent, env)
+
+        collect_memory_start_iter = max_iter - memory_storer.size
 
         start_time = time.time()
         for i in range(max_iter):
 
             s, a, r, ns = next(traj_gen)
 
+            # store memory for later use ,dont store memory if memory_storer isnt none
+            if i >= collect_memory_start_iter and memory_storer:
+                memory_storer.add_memory_to_storation(s, a, r, ns)
+
             agent.memorize(s, a, r, ns)
 
+            # learn after warmup and learn once every 4 step
             if i > warmup and i % 4 == 0:
 
                 agent.learn()

@@ -1,6 +1,11 @@
 import torch
 import numpy as np
+from collections import namedtuple
+from agents.base import MemoryStorer
 
-a = torch.rand(4,4).to(device = 'cuda:0')
+Memory = namedtuple('Memory', ['state', 'action', 'reward', 'state_'])
 
-print(np.zeros(a[2,:].shape))
+a = MemoryStorer(123)
+
+if a:
+    print('adfas')
