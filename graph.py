@@ -6,10 +6,6 @@ import pandas as pd
 
 import sys
 
-args = sys.argv
-
-root_path = args[1]
-
 
 def plot_multiple(root_path):
     """Plot multiple line
@@ -27,10 +23,22 @@ def plot_multiple(root_path):
 
     for i, path in enumerate(sorted(paths)):
         data = pd.read_csv(path, header=None)
+        
+        color = path.split('-')[1][0] if path.split('-')[1][0] in ['b','g','r','c','m','y','k','w'] else np.random.rand(3)
         ax.plot(data.iloc[:, 0], data.iloc[:, 1],
-                color=np.random.rand(3), label=os.path.basename(path))
+                color=color, label=os.path.basename(path))
 
     ax.legend(loc='best')
 
     plt.savefig(os.path.join(root_path, 'result.svg'))
     plt.show()
+
+
+def main():
+    args = sys.argv
+    root_path = args[1]
+
+    plot_multiple(root_path)
+
+if __name__ == "__main__":
+    main()

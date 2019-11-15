@@ -39,7 +39,7 @@ class DDQN(Agent, MemoryStorer):
         assert hparams['net_size'] in ['big', 'small', 'normal',
                                        'super'], "net_size must be one of ['big','small','normal']"
 
-        self.model = Nature_CNN(self.hparams['n_actions'], hparams['net_size'])
+        self.model = Nature_CNN(self.hparams['n_actions'], hparams['net_size'],hparams['init_weight'])
         self.target = Nature_CNN(
             self.hparams['n_actions'], hparams['net_size'])
 
