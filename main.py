@@ -1,6 +1,7 @@
 import argparse
 from gym import wrappers
 from agents.ddqn import DDQN
+from agents.evaluator import Evaluator
 from agents.base import MemoryStorer
 from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
@@ -30,7 +31,7 @@ def ddqn_main(logger):
     )
 
     hparams = {'lr': LEARNING_RATE, 'gamma': GAMMA, 'memory_size': MAX_MEM_LEN, 'batch_size': BATCH_SIZE,
-               'scale': SCALE, 'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n,'init_weight':INIT_WEIGHT}
+               'scale': SCALE, 'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n, 'init_weight': INIT_WEIGHT}
 
     ddqn_agent = DDQN(logger, LOAD_MODEL_PATH, hparams)
 
@@ -47,65 +48,40 @@ def ddqn_main(logger):
         TARGET_UPDATE,
     )
 
+    avg_episode_reward, ep_rewards = Evaluator(ddqn_agent, env).evaluate()
+
     if logger is not None:
         # Save the final model
-        logger.save_model(ddqn_agent, '-1')
+        logger.save_model(ddqn_agent, 'final')
         # Record the total used time
         logger.log_total_time_cost()
         # save the memories
         logger.store_memories(memory_storer)
+        # save eval_rewards
+        ep_rewards.insert(0, avg_episode_reward)
+        data = [(reward,) for reward in ep_rewards]
+        logger.save_as_csv(data, 'eval_rewards.csv')
 
+def test():
+    root_path = 'result/191115_180529'
 
-def test(logger):
-    MAX_ITERATION = 5000
-    LEARNING_RATE = 0.0001
-    BATCH_SIZE = 32
-    GAMMA = 0.99
-    EPS_START = 1.0
-    EPS_END = 0.1
-    EPS_STEP = 1000
-    MAX_MEM_LEN = 1000
-    WARMUP = 1000
-    TARGET_UPDATE = 1000
-    SAVE_MODEL_INTERVAL = 100
-    RENDER = False
-    GAME = "BreakoutNoFrameskip-v4"
-    SCALE = True
+    model_path = os.path.join(root_path,'models','model_final.pt')
 
-    # make environment
-    env = make_atari(GAME)
+    game_name = ''
 
-    if logger is not None:
-        env = wrappers.Monitor(
-            env,
-            logger.get_movie_pass(),
-            video_callable=(lambda ep: ep % 100 == 0),
-            force=True,
-        )
+    with open(os.path.join(root_path,'setting.csv'),'r') as f:
+        reader = csv.reader(f)
+        setting_dict = {row[0]: row[1] for row in reader}
+        game_name = setting_dict['game']
 
-    env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
+    env = make_atari(game_name)
+    env = wrap_deepmind(env,frame_stack=True,scale=True)
 
-    runner = Normal_runner(
-        EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
-    )
+    hparams = {'n_actions':env.action_space.n,'net_size':'normal','init_weight':True,'state_shape':env.observation_space.shape,'scale':True}
 
-    ddqn_agent = DDQN(env, LEARNING_RATE, GAMMA, logger, MAX_MEM_LEN,
-                      BATCH_SIZE, SCALE, NET_SIZE, LOAD_MODEL_PATH, MEMORY_SOTRATION_SIZE)
+    agent = DDQN(None,model_path,hparams)
 
-    runner.train(
-        ddqn_agent,
-        env,
-        MAX_ITERATION,
-        BATCH_SIZE,
-        warmup=WARMUP,
-        target_update_interval=TARGET_UPDATE,
-    )
-
-    if logger is not None:
-        # Save the final model
-        logger.save_weights(ddqn_agent, '-1')
-        # Record the total used time
-        logger.log_total_time_cost()
+    Evaluator(agent,env).play()
 
 
 if __name__ == "__main__":
@@ -158,7 +134,7 @@ if __name__ == "__main__":
     MEMORY_SOTRATION_SIZE = args.memory_storation_size
     INIT_WEIGHT = args.init_weight
 
-    assert MEMORY_SOTRATION_SIZE < MAX_ITERATION,'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
+    assert MEMORY_SOTRATION_SIZE < MAX_ITERATION, 'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
 
     logger = LogWriter(ROOT_PATH, BATCH_SIZE)
     logger.save_setting(args)

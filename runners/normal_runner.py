@@ -56,16 +56,14 @@ class Normal_runner(RL_runner):
                 yield state, action, reward, state_
 
                 # log
+                print("{}: {}, steps: {}, epsilon: {}".format(self.episode, episode_reward, epi_step,
+                                                                 self.eps_start + (
+                                                                     self.eps_end - self.eps_start) * fraction))
                 if self.logger is not None:
                     if self.episode % self.save_model_interval == 0:
                         self.logger.save_model(agent, str(self.episode))
 
-                    self.logger.add_reward(self.episode, episode_reward, {"steps": epi_step, "epsilon": (
-                        self.eps_start + (self.eps_end - self.eps_start) * fraction)})
-                else:
-                    print("{} : {}, steps : {}, epsilon : {}".format(self.episode, episode_reward, epi_step,
-                                                                     self.eps_start + (
-                                                                         self.eps_end - self.eps_start) * fraction))
+                    self.logger.add_reward(self.episode, episode_reward,{'steps':epi_step})
 
                 self.episode += 1
                 epi_step = 0

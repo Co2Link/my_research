@@ -55,14 +55,6 @@ class LogWriter():
     def add_reward(self, episode, reward, info={}):
         """ record episode_reward and max_episode_reward """
 
-        # Standard output
-        print(episode, ":", reward, end="")
-
-        for key in info.keys():
-            print(", ", key, ":", info[key], end="")
-
-        print()
-
         # log the max_episode_reward
         if self.max_reward < reward:
             self.max_reward = reward
@@ -116,3 +108,12 @@ class LogWriter():
     def store_memories(self,memory_storer):
         if memory_storer:
             memory_storer.store_memories(self.root_dir_with_datetime)
+
+    def save_as_csv(self,data,filename):
+        """
+        Args:
+            data: list of tuples(lists)
+        """
+        with open(os.path.join(self.root_dir_with_datetime,'csv',filename),'w',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows(data)

@@ -1,11 +1,11 @@
 import torch
+import os
 import numpy as np
+import csv
 from collections import namedtuple
 from agents.base import MemoryStorer
 
-Memory = namedtuple('Memory', ['state', 'action', 'reward', 'state_'])
+from agents.evaluator import Evaluator
+from agents.ddqn import DDQN
+from atari_wrappers import *
 
-a = MemoryStorer(123)
-
-if a:
-    print('adfas')
