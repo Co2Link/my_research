@@ -23,7 +23,7 @@ class DDQN(Agent, MemoryStorer):
 
     Args:
         hparams:{'lr','gamma','memory_size','batch_size','scale','net_size',
-                memory_storation_size','state_shape','n_actions','init_weight'}
+                memory_storation_size','state_shape','n_actions'}
     """
 
     def __init__(self, logger, load_model_path, hparams, gpu='0'):
@@ -37,9 +37,9 @@ class DDQN(Agent, MemoryStorer):
                                        'super'], "net_size must be one of ['big','small','normal']"
         # Create model
         self.model = Nature_CNN(
-            self.hparams['n_actions'], hparams['net_size'], hparams['init_weight'])
+            self.hparams['n_actions'], hparams['net_size'])
         self.target = Nature_CNN(
-            self.hparams['n_actions'], hparams['net_size'], hparams['init_weight'])
+            self.hparams['n_actions'], hparams['net_size'])
 
         # Load model for inference otherwies set for training
         if load_model_path:

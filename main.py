@@ -31,7 +31,7 @@ def ddqn_main(logger):
     )
 
     hparams = {'lr': LEARNING_RATE, 'gamma': GAMMA, 'memory_size': MAX_MEM_LEN, 'batch_size': BATCH_SIZE,
-               'scale': SCALE, 'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n, 'init_weight': INIT_WEIGHT}
+               'scale': SCALE, 'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n}
 
     ddqn_agent = DDQN(logger, LOAD_MODEL_PATH, hparams)
 
@@ -77,7 +77,7 @@ def test():
     env = make_atari(game_name)
     env = wrap_deepmind(env,frame_stack=True,scale=True)
 
-    hparams = {'n_actions':env.action_space.n,'net_size':'normal','init_weight':True,'state_shape':env.observation_space.shape,'scale':True}
+    hparams = {'n_actions':env.action_space.n,'net_size':'normal','state_shape':env.observation_space.shape,'scale':True}
 
     agent = DDQN(None,model_path,hparams)
 
@@ -110,7 +110,6 @@ if __name__ == "__main__":
     parser.add_argument("--load_model_path", type=str, default="")
     parser.add_argument("--info", type=str, default='')
     parser.add_argument("--memory_storation_size", type=int, default=100000)
-    parser.add_argument("--init_weight", action='store_true')
 
     args = parser.parse_args()
 
@@ -132,7 +131,6 @@ if __name__ == "__main__":
     NET_SIZE = args.net_size
     LOAD_MODEL_PATH = args.load_model_path
     MEMORY_SOTRATION_SIZE = args.memory_storation_size
-    INIT_WEIGHT = args.init_weight
 
     assert MEMORY_SOTRATION_SIZE < MAX_ITERATION, 'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
 

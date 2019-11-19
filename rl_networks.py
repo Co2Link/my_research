@@ -8,7 +8,7 @@ class Nature_CNN(nn.Module):
     Input shape: 4x84x84 (C,H,W)
     """
 
-    def __init__(self, n_actions, size='normal',init_weight=True):
+    def __init__(self, n_actions, size='normal'):
 
         Size = {'normal': 1, 'big': 2, 'super': 4, 'small': 0.5}
         n = Size[size]
@@ -22,8 +22,7 @@ class Nature_CNN(nn.Module):
         self.fc1 = nn.Linear(int(7*7*64*n), int(512*n))
         self.fc2 = nn.Linear(int(512*n), n_actions)
 
-        if init_weight:
-            self.initialize_weights()
+        self.initialize_weights()
 
     def initialize_weights(self):
         for m in self.modules():
