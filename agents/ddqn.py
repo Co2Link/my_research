@@ -22,7 +22,7 @@ class DDQN(Agent, MemoryStorer):
     Input shape: Nx4x84x84 (N,C,H,W)
 
     Args:
-        hparams:{'lr','gamma','memory_size','batch_size','scale','net_size',
+        hparams:{'lr','gamma','memory_size','batch_size','net_size',
                 memory_storation_size','state_shape','n_actions'}
     """
 
@@ -82,11 +82,9 @@ class DDQN(Agent, MemoryStorer):
         transpose x from (N,H,W,C) to (N,C,H,W)
         then cast x to device
         """
-        if self.hparams['scale']:
-            x = torch.Tensor(x.transpose((0, 3, 1, 2))).to(self.device)
-        else:
-            x = x.astype(np.float32)/255.0
-            x = torch.Tensor(x.transpose((0, 3, 1, 2))).to(self.device)
+        # scale
+        x = x.astype(np.float32)/255.0
+        x = torch.Tensor(x.transpose((0, 3, 1, 2))).to(self.device)
         return x
 
     def memorize(self, s, a, r, s_):

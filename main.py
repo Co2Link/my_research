@@ -24,14 +24,14 @@ def ddqn_main(logger):
             force=True,
         )
 
-    env = wrap_deepmind(env, frame_stack=True, scale=SCALE)
+    env = wrap_deepmind(env, frame_stack=True, scale=True)
 
     runner = Normal_runner(
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
     )
 
     hparams = {'lr': LEARNING_RATE, 'gamma': GAMMA, 'memory_size': MAX_MEM_LEN, 'batch_size': BATCH_SIZE,
-               'scale': SCALE, 'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n}
+               'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n}
 
     ddqn_agent = DDQN(logger, LOAD_MODEL_PATH, hparams)
 
@@ -77,7 +77,7 @@ def test():
     env = make_atari(game_name)
     env = wrap_deepmind(env,frame_stack=True,scale=True)
 
-    hparams = {'n_actions':env.action_space.n,'net_size':'normal','state_shape':env.observation_space.shape,'scale':True}
+    hparams = {'n_actions':env.action_space.n,'net_size':'normal','state_shape':env.observation_space.shape}
 
     agent = DDQN(None,model_path,hparams)
 
@@ -104,7 +104,6 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
-    parser.add_argument("--scale", action="store_true")
     parser.add_argument("--store_memory", action="store_true")
     parser.add_argument("--net_size", type=str, default="normal")
     parser.add_argument("--load_model_path", type=str, default="")
@@ -126,7 +125,6 @@ if __name__ == "__main__":
     SAVE_MODEL_INTERVAL = args.save_model_interval
     RENDER = args.render
     GAME = args.game
-    SCALE = args.scale
     ROOT_PATH = args.root
     NET_SIZE = args.net_size
     LOAD_MODEL_PATH = args.load_model_path
@@ -138,6 +136,6 @@ if __name__ == "__main__":
     logger.save_setting(args)
 
     if args.test:
-        test(logger)
+        test()
     else:
         ddqn_main(logger)

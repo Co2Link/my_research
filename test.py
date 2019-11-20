@@ -10,6 +10,9 @@ from agents.ddqn import DDQN
 from atari_wrappers import *
 
 
-a = np.append([1, 2, 3], [4, 5, 6, 7, 8, 9])
+a = np.random.rand(3,3)
 
 print(a)
+print(a.dtype)
+print(type(np.float64))
+print(isinstance(a,np.float64))
