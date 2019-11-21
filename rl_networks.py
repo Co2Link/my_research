@@ -22,9 +22,9 @@ class Nature_CNN(nn.Module):
         self.fc1 = nn.Linear(int(7*7*64*n), int(512*n))
         self.fc2 = nn.Linear(int(512*n), n_actions)
 
-        self.initialize_weights()
+        self.init_weights()
 
-    def initialize_weights(self):
+    def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.xavier_normal_(m.weight)
@@ -45,6 +45,58 @@ class Nature_CNN(nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
+        return x
+
+    def metrics_names(self):
+        return ["loss"]
+
+
+class ACVP(nn.Module):
+    def __init__(self, n_actions):
+        super(ACVP, self).__init__()
+
+        self.conv1 = nn.Conv2d(4, 64, 6, 2)
+        self.conv2 = nn.Conv2d(64, 64, 6, 2, (2, 2))
+        self.conv3 = nn.Conv2d(64, 64, 6, 2, (2, 2))
+
+        self.hidden_units = 64 * 10 * 10
+
+        self.fc4 = nn.Linear(self.hidden_units, 1024)
+        self.fc_encode = nn.Linear(1024, 2048)
+        self.fc_action = nn.Linear(n_actions, 2048)
+        self.fc_decode = nn.Linear(2048, 1024)
+        self.fc5 = nn.Linear(1024, self.hidden_units)
+
+        self.deconv6 = nn.ConvTranspose2d(64, 64, 6, 2, (2, 2))
+        self.deconv7 = nn.ConvTranspose2d(64, 64, 6, 2, (2, 2))
+        self.deconv8 = nn.ConvTranspose2d(64, 1, 6, 2)
+
+        self.init_weights()
+
+    def init_weights(self):
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
+                nn.init.xavier_uniform(layer.weight.data)
+            nn.init.constant(layer.bias.data, 0)
+        nn.init.uniform(self.fc_encode.weight.data, -1, 1)
+        nn.init.uniform(self.fc_decode.weight.data, -1, 1)
+        nn.init.uniform(self.fc_action.weight.data, -0.1, 0.1)
+
+    def forward(self, state, action):
+        x=F.relu(self.conv1(state))
+        x=F.relu(self.conv2(x))
+        x=F.relu(self.conv3(x))
+        x=x.view((-1, self.hidden_units))
+        x=F.relu(self.fc4(x))
+        x=self.fc_encode(x)
+        action=self.fc_action(action)
+        x=torch.mul(x, action)
+        x=self.fc_decode(x)
+        x=F.relu(self.fc5(x))
+        x=x.view((-1, 64, 10, 10))
+        x=F.relu(self.deconv6(x))
+        x=F.relu(self.deconv7(x))
+        x=self.deconv8(x)
         return x
 
     def metrics_names(self):

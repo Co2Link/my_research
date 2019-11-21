@@ -6,24 +6,26 @@ import random
 import pickle
 import csv
 from collections import deque,namedtuple
-from agents.teacher import Teacher_world_model
-from agents.student import SingleDtStudent_world
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+
+from rl_networks import ACVP
+
+
+# from agents.teacher import Teacher_world_model
+# from agents.student import SingleDtStudent_world
 
 import torch
-
-from tqdm import tqdm
 
 from atari_wrappers import *
 from logWriter import LogWriter
 
+from util.decorators import timethis
+
 Memory = namedtuple('Memory',['state','action','reward','state_'])
 
 class Memory_generator:
-    def __init__(self,root_path ,train_memory_size = 1000,test_memory_size = 500):
-
-        self.train_memory_size = train_memory_size
-
-        self.test_memory_size = test_memory_size
+    def __init__(self,root_path):
 
         self.root_path = root_path
 
@@ -31,87 +33,48 @@ class Memory_generator:
 
         self.memories = []
 
-        with open(os.path.join(root_path,'setting.csv'),newline='') as f:
-            reader = csv.reader(f)
-            self.setting_dict = {row[0]: row[1] for row in reader}
+        self._restore_memories()
 
+    @timethis
+    def _restore_memories(self):
 
-    
-    def load_model_and_env(self,game_name = "BreakoutNoFrameskip-v4"):
-        env = make_atari(game_name)
-        self.env = wrap_deepmind(env,frame_stack=True,scale=True)
-        with open(os.path.join(self.root_path,'models','model_arch.json'),'r') as f:
-            self.model = model_from_json(f.read())
-        self.model.load_weights(os.path.join(os.path.join(self.root_path,'models','model_weights_final.h5f')))
-
-    def _memory_generator(self):
-
-        state = self.env.reset()
-
-        while True:
-
-            if 0.05 <=np.random.uniform(0,1):
-                action = self.select_action(state)
-            else:
-                action = self.env.action_space.sample()
-            
-            state_,reward,done,_ = self.env.step(action)
-
-            if not done:
-                yield state,action,reward,state_
-            else:
-                # state_ = np.zeros(np.array(state_).shape)
-                yield state,action,reward,state_
-
-                state_ = self.env.reset()
-            state = state_
-
-    def generate_memories(self,store = False):
-
-        memory_gen = self._memory_generator()
-
-        print("*** generating memories for trainning and testing ***")
-        for _ in tqdm(range(self.train_memory_size + self.test_memory_size)):
-            state,action,reward,state_ = next(memory_gen)
-            self.memories.append(Memory(state,action,reward,state_))
-        
-        if store:
-            print("*** storing memories ***")
-            self.store_memories()
-    
-    def store_memories(self):
-        start_time = time.time()
-        with open(os.path.join(self.root_path,'memories.pkl'),'wb') as f:
-            pickle.dump(self.memories,f)
-        print("*** time cost for storing memories: {} ***".format(time.time()-start_time))
-
-    def restore_memories(self):
-        start_time = time.time()
         with open(os.path.join(self.root_path,'memories.pkl'),'rb') as f:
-            self.memories = pickle.load(f)
-        print("*** time cost for storing memories: {} ***".format(time.time()-start_time))
+            memories = pickle.load(f)
+        self.zero_array = np.zeros(np.shape(memories[0][0]))
         
-        cleaned_memories = []
-        for memory in self.memories:
-            if not np.array_equal(memory[3],np.zeros(np.shape(memory[0]))):
-                cleaned_memories.append(memory)
-        self.memories = cleaned_memories
-        print("*** cleaned memories size :{} ***".format(len(self.memories)))
+        # 9:1 for training and testing
+        self.train_memories = memories[int(len(memories)/10):]
+        self.test_memories = memories[:int(len(memories)/10)]
+        print('*** traning size: {},testing size: {}'.format(len(self.train_memories),len(self.test_memories)))
 
-        with open(os.path.join(self.root_path,'setting.csv'), newline='') as f:
-            reader = csv.reader(f)
-            setting_dict = {row[0]: row[1] for row in reader}
-        self.memory_size = int(setting_dict['memory_storation_size'])
-        self.train_memory_size = int(len(self.memories)*9/10)
-        self.test_memory_size = int(len(self.memories)/10)
-        print('*** traning size: {},testing size: {}'.format(self.train_memory_size,self.test_memory_size))
+    def sample_batches(self,batch_size,is_test = False,prediction_steps=1):
+        states,one_hot_actions,rewards,state_s = [],[],[],[]
+        for _ in range(batch_size):
+            state,one_hot_action,reward,state_ = self._sample_memories_MultiStep(prediction_steps,is_test)
+            states.append(state)
+            one_hot_actions.append(one_hot_action)
+            rewards.append(reward)
+            state_s.append(state_)
 
-    def sample_memories(self,batch_size,test = False):
-        """ sample memories for trainning or testing """
-        if test:
-            batch = random.sample(self.memories[:self.test_memory_size],batch_size)
+        return np.array(states),
+
+    def sample_memories(self,batch_size,is_test = False):
+        """ sample memories for trainning or testing
+
+        Shape:
+            states: (N,84,84,4)
+            one_hot_actions: (N,4)
+            rewards: (N,)
+            state_s: (N,84,84,4)
+        """
+        
+        if is_test:
+            memories = self.test_memories
         else:
-            batch = random.sample(self.memories[self.test_memory_size:self.train_memory_size + self.test_memory_size],batch_size)
+            memories = self.train_memories
+        
+
+            batch = random.sample(memories,batch_size)
 
         states,actions,rewards,state_s=map(np.array,zip(*batch))
 
@@ -119,19 +82,23 @@ class Memory_generator:
         one_hot_actions[np.arange(batch_size),actions] = 1
 
         # scale
-        if self.setting_dict['scale'] == 'False':
-            states = np.array(states).astype(np.float32)/255.0
-            state_s = np.array(state_s).astype(np.float32)/255.0
+        states = states.astype(np.float32)/255.0
+        state_s = state_s.astype(np.float32)/255.0
         return states,one_hot_actions,rewards,state_s
 
-    def sample_memories_MultiStep(self,prediction_steps = 1):
-
-        memories = self.memories[:self.test_memory_size]
-
+    def _sample_memories_MultiStep(self,prediction_steps = 1,is_test = False):
+        
+        if is_test:
+            memories = self.memories[:self.test_memory_size]
+        else:
+            memories = self.memories[self.test_memory_size:self.test_memory_size+self.train_memory_size]
+        
         while True:
             randint = random.randint(0,len(memories)-prediction_steps)
-            dones = [memory[-1] for memory in memories[randint:randint+prediction_steps]]
-            if True in dones and not dones[-1]:
+            dones = [True if np.array_equal(memory[-1],self.zero_array) else False for memory in memories[randint:randint+prediction_steps]]
+            print(dones)
+            if True in dones :
+                print('有内鬼',dones)
                 continue
             else:
                 break
@@ -141,67 +108,18 @@ class Memory_generator:
         state_ = [memories[randint+step][3][:,:,-1] for step in range(prediction_steps)]
 
         action = [memories[randint+step][1] for step in range(prediction_steps)]
-        # print('action',action)
 
         one_hot_action = np.zeros((prediction_steps,self.action_space_size))
         one_hot_action[np.arange(prediction_steps),action] = 1
-        # print('one_hot_action',one_hot_action)
 
+        reward = np.array([memories[randint+step][2] for step in range(prediction_steps)])
 
         # scale
-        if self.setting_dict['scale'] == 'False':
-            state = np.array(state).astype(np.float32)/255.0
-            state_ = np.array(state_).astype(np.float32)/255.0
-        return state,one_hot_action,state_
+        state = np.array(state).astype(np.float32)/255.0
+        state_ = np.array(state_).astype(np.float32)/255.0
+        return state,one_hot_action,reward,state_
 
-
-    def test(self):
-        states,actions,rewards,state_s = self.sample_memories(batch_size = 32)
-
-        empty_state = np.zeros(state_s[0].shape)
-
-        count_1 = 0
-
-        for i in range(32):
-            if np.array_equal(state_s[i],empty_state):
-                count_1+=1
-                continue
-            else:
-                frame_1 = states[i,:,:,3]
-                frame_2 = state_s[i,:,:,2]
-                assert np.array_equal(frame_1,frame_2),'error'
-        print(states.shape)
-        print(actions.shape)
-        print(count_1)
-
-    def play(self):
-        state = self.env.reset()
-
-        while True:
-            self.env.render()
-
-            if 0.05 <= np.random.uniform(0,1):
-                action = self.select_action(state)
-            else:
-                action = self.env.action_space.sample()
-
-            state_, _, done, _ = self.env.step(action)
-
-            if done:
-                state_ = self.env.reset()
-            
-            state = state_
-
-    def select_action(self, state):
-        state = self._LazyFrame2array(state)
-        output = self.model.predict_on_batch(
-            np.expand_dims(state, axis=0)).ravel()
-        return np.argmax(output)
-
-    def _LazyFrame2array(self, lazyframe):
-        return np.array(lazyframe)
-
-class state_predictor:
+class State_predictor:
     def __init__(self,model_path = None):
         if model_path:
             print("*** load pretrained model ***")
@@ -281,138 +199,138 @@ class state_predictor:
         with open(path_with_file_name + '.json','w') as json_file:
             json_file.write(self.model.to_json())
 
-def train_world_model(model_path,epoch = 10000):
-    batch_size = 32
-    action_space_size = 4
-    ROOT_PATH = 'result_WORLD'
+# def train_world_model(model_path,epoch = 10000):
+#     batch_size = 32
+#     action_space_size = 4
+#     ROOT_PATH = 'result_WORLD'
 
-    config = tf.ConfigProto(
-        gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
-    )
+#     config = tf.ConfigProto(
+#         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
+#     )
 
-    sess = tf.Session(config=config)
-    K.set_session(sess)
+#     sess = tf.Session(config=config)
+#     K.set_session(sess)
 
-    logger = LogWriter(ROOT_PATH,batch_size)
+#     logger = LogWriter(ROOT_PATH,batch_size)
 
-    gen = Memory_generator(model_path)
+#     gen = Memory_generator(model_path)
 
     
-    print('restore memories')
-    gen.restore_memories()
+#     print('restore memories')
+#     gen.restore_memories()
 
-    model = state_predictor()
+#     model = state_predictor()
 
-    logger.set_model(model.model)
-    logger.set_loss_name([*model.model.metrics_names])
+#     logger.set_model(model.model)
+#     logger.set_loss_name([*model.model.metrics_names])
 
 
-    print('trainning world model')
-    for i in tqdm(range(epoch)):
-        states,actions,_,state_s = gen.sample_memories(batch_size)
+#     print('trainning world model')
+#     for i in tqdm(range(epoch)):
+#         states,actions,_,state_s = gen.sample_memories(batch_size)
 
-        loss = model.update(states,state_s[:,:,:,3],actions)
+#         loss = model.update(states,state_s[:,:,:,3],actions)
 
-        logger.add_loss([loss])
+#         logger.add_loss([loss])
 
-    logger.save_model_arch(model)
-    logger.save_weights(model)
+#     logger.save_model_arch(model)
+#     logger.save_weights(model)
 
-def test_world_model(world_path,model_path):
+# def test_world_model(world_path,model_path):
 
-    config = tf.ConfigProto(
-        gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
-    )
+#     config = tf.ConfigProto(
+#         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
+#     )
 
-    sess = tf.Session(config=config)
-    K.set_session(sess)
+#     sess = tf.Session(config=config)
+#     K.set_session(sess)
 
-    from matplotlib import pyplot as plt
+#     from matplotlib import pyplot as plt
 
-    sp = state_predictor(model_path=world_path)
+#     sp = state_predictor(model_path=world_path)
 
-    mg = Memory_generator(root_path = model_path)
-    mg.restore_memories()
+#     mg = Memory_generator(root_path = model_path)
+#     mg.restore_memories()
     
-    while True:
-        states,actions,rewards,state_s = mg.sample_memories(batch_size = 10,test=True)
+#     while True:
+#         states,actions,rewards,state_s = mg.sample_memories(batch_size = 10,test_set=True)
 
-        predicted_frame = sp.predict(states,actions)
+#         predicted_frame = sp.predict(states,actions)
         
         
 
-        fig = plt.figure()
+#         fig = plt.figure()
 
-        rows,cols = 3,2
+#         rows,cols = 3,2
 
-        for i in range(1,rows+1):
-            fig.add_subplot(rows,cols,2*i-1).set_title('real')
-            plt.imshow(state_s[i-1,:,:,3],interpolation='nearest')
-            fig.add_subplot(rows,cols,2*i).set_title('predicted')
-            plt.imshow(predicted_frame[i-1,:,:],interpolation='nearest')
+#         for i in range(1,rows+1):
+#             fig.add_subplot(rows,cols,2*i-1).set_title('real')
+#             plt.imshow(state_s[i-1,:,:,3],interpolation='nearest')
+#             fig.add_subplot(rows,cols,2*i).set_title('predicted')
+#             plt.imshow(predicted_frame[i-1,:,:],interpolation='nearest')
 
-        plt.show()
+#         plt.show()
 
-def test_world_model_2(world_path,model_path,prediction_steps = 5):
-    config = tf.ConfigProto(
-        gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
-    )
+# def test_world_model_2(world_path,model_path,prediction_steps = 5):
+#     config = tf.ConfigProto(
+#         gpu_options=tf.GPUOptions(allow_growth=True, visible_device_list='0')
+#     )
 
-    sess = tf.Session(config=config)
-    K.set_session(sess)
+#     sess = tf.Session(config=config)
+#     K.set_session(sess)
 
-    sp = state_predictor(model_path=world_path)
+#     sp = state_predictor(model_path=world_path)
 
-    mg = Memory_generator(root_path = model_path)
-    mg.restore_memories()
-    state,one_hot_action,state_ = mg.sample_memories_MultiStep(prediction_steps=prediction_steps)
+#     mg = Memory_generator(root_path = model_path)
+#     mg.restore_memories()
+#     state,one_hot_action,state_ = mg.sample_memories_MultiStep(prediction_steps=prediction_steps)
 
-    state_=np.array(state_)
+#     state_=np.array(state_)
     
-    predicted_frames = []
-    current_input_state = state
-    for i in range(prediction_steps):
-        predicted_frame = sp.predict(np.expand_dims(current_input_state,axis=0),np.expand_dims(one_hot_action[i],axis=0))
-        predicted_frames.append(predicted_frame)
-        current_input_state = np.concatenate((current_input_state[:,:,1:],predicted_frame.reshape((84,84,1))),axis=2)
-        # print(current_input_state.shape)
+#     predicted_frames = []
+#     current_input_state = state
+#     for i in range(prediction_steps):
+#         predicted_frame = sp.predict(np.expand_dims(current_input_state,axis=0),np.expand_dims(one_hot_action[i],axis=0))
+#         predicted_frames.append(predicted_frame)
+#         current_input_state = np.concatenate((current_input_state[:,:,1:],predicted_frame.reshape((84,84,1))),axis=2)
+#         # print(current_input_state.shape)
 
-    predicted_frames = np.squeeze(np.array(predicted_frames))
+#     predicted_frames = np.squeeze(np.array(predicted_frames))
     
-    from matplotlib import pyplot as plt
+#     from matplotlib import pyplot as plt
 
-    fig = plt.figure()
+#     fig = plt.figure()
 
-    rows,cols = 2,prediction_steps
+#     rows,cols = 2,prediction_steps
 
-    for i in range(1,cols+1):
-        fig.add_subplot(rows,cols,i).set_title('true (k+{})'.format(i))
-        plt.imshow(state_[i-1,:,:],interpolation='nearest')
-        fig.add_subplot(rows,cols,i+cols).set_title('pred (k+{})'.format(i))
-        plt.imshow(predicted_frames[i-1,:,:],interpolation='nearest')
+#     for i in range(1,cols+1):
+#         fig.add_subplot(rows,cols,i).set_title('true (k+{})'.format(i))
+#         plt.imshow(state_[i-1,:,:],interpolation='nearest')
+#         fig.add_subplot(rows,cols,i+cols).set_title('pred (k+{})'.format(i))
+#         plt.imshow(predicted_frames[i-1,:,:],interpolation='nearest')
 
-    plt.show()
+#     plt.show()
 
 
-def distill_with_world_model(agent_model_path,world_model_path,mem_size):
+# def distill_with_world_model(agent_model_path,world_model_path,mem_size):
 
-    ROOT_PATH = 'result_DT_WORLD'
+#     ROOT_PATH = 'result_DT_WORLD'
 
-    BATCH_SIZE = 32
+#     BATCH_SIZE = 32
     
-    teacher = Teacher_world_model(agent_model_path,world_model_path,mem_size)
+#     teacher = Teacher_world_model(agent_model_path,world_model_path,mem_size)
 
-    logger = LogWriter(ROOT_PATH,BATCH_SIZE)
+#     logger = LogWriter(ROOT_PATH,BATCH_SIZE)
 
-    student = SingleDtStudent_world(teacher,logger,'big',100000,0.0001)
+#     student = SingleDtStudent_world(teacher,logger,'big',100000,0.0001)
 
-    student.distill()
+#     student.distill()
 
-    logger.save_weights(student)
-    logger.save_model_arch(student)
+#     logger.save_weights(student)
+#     logger.save_model_arch(student)
 
 if __name__ == "__main__":
-    # root_path = 'result/191031_012825'
+    root_path = 'result/191119_214214'
 
     # mg = Memory_generator(root_path)
     # mg.restore_memories()
@@ -422,5 +340,29 @@ if __name__ == "__main__":
 
     # test_world_model_2('result_WORLD/191031_200650','result/191031_161605')
 
-    distill_with_world_model('result/191031_161605','result_WORLD/191031_200650',100000)
+    # distill_with_world_model('result/191031_161605','result_WORLD/191031_200650',100000
+
+    prediction_steps = 5
+    mem_gen = Memory_generator(root_path)
+    for i in range(100):
+        state,action,reward,state_ = mem_gen._sample_memories_MultiStep(prediction_steps=prediction_steps)
+     
+    fig,axes = plt.subplots(1,prediction_steps+1)
+    fig.set_size_inches(12,8)
+
+    axes[0].imshow(state[:,:,-1],interpolation='nearest')
+    axes[0].set_title('moto')
+
+    for i in range(prediction_steps):
+        axes[i+1].imshow(state_[i,:,:],interpolation='nearest')
+        axes[i+1].set_title(str(i))
+
+
+    plt.show()
+
+
+    
+    
+    
+    
     

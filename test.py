@@ -2,6 +2,7 @@ import torch
 import os
 import numpy as np
 import csv
+import random
 from collections import namedtuple
 from agents.base import MemoryStorer
 
@@ -10,9 +11,5 @@ from agents.ddqn import DDQN
 from atari_wrappers import *
 
 
-a = np.random.rand(3,3)
-
-print(a)
-print(a.dtype)
-print(type(np.float64))
-print(isinstance(a,np.float64))
+for i in range(100):
+    print(random.randint(0,10))
