@@ -14,6 +14,7 @@ from rl_networks import ACVP
 from util.decorators import timethis
 from logWriter import LogWriter
 
+torch.set_num_threads(1)
 
 class State_predictor:
     def __init__(
