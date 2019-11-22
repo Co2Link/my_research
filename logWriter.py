@@ -94,7 +94,7 @@ class LogWriter():
     def save_setting(self, args):
         with open(os.path.join(self.root_dir_with_datetime, 'setting.csv').replace('\\', '/'), 'w', newline='') as f:
             writer = csv.writer(f)
-            for k, v in vars(args).items():
+            for k, v in args.items():
                 writer.writerow((k, v))
                 print(k, v)
 

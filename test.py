@@ -11,9 +11,10 @@ from agents.ddqn import DDQN
 from atari_wrappers import *
 
 
-a = torch.randn(2,3)
+curriculum_params={
+    "prediction_steps": [1, 3, 5],
+    "lr": [1e-4, 1e-5, 1e-5],
+    "n_epoches": [int(1e3), int(2 * 1e3), int(2 * 1e3)],
+}
 
-print(a)
-a = torch.cat(a,dim=1)
-
-print(a)
+print(str(curriculum_params))

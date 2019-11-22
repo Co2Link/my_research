@@ -7,6 +7,6 @@ def timethis(func):
         start = time.time()
         result = func(*args,**kwargs)
         end = time.time()
-        print("time cost for{}: {:.3f}".format(func.__name__,end-start))
+        print("time cost for {}: {:.3f}".format(func.__name__,end-start))
         return result
     return wrapper
