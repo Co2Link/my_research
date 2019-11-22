@@ -3,13 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import pandas as pd
+import argparse
 
 import sys
 
 COLOR = ['b','g','r','c','m','y','k','w']
 
 
-def plot_multiple(root_path):
+def plot_multiple(root_path,header=False,save_file_name = 'result'):
     """Plot multiple line
 
     each row should be like (index,value),
@@ -18,21 +19,23 @@ def plot_multiple(root_path):
     Args:
         root_path: path that csv files are in
     """
+    header = 'infer' if header else None
+    
     paths = glob.glob(root_path+'/*.csv')
 
     fig, ax = plt.subplots()
     fig.set_size_inches(12, 8)
 
-    for i, path in enumerate(sorted(paths)):
-        data = pd.read_csv(path, header=None)
+    for path in sorted(paths):
+        data = pd.read_csv(path, header=header)
         
-        color = path.split('-')[1][0] if path.split('-')[1][0] in COLOR else np.random.rand(3)
-        ax.plot(data.iloc[:, 0], data.iloc[:, 1],
+        color = path.split('-')[1][0] if '-' in path and path.split('-')[1][0] in COLOR else np.random.rand(3)
+        ax.plot(list(range(len(data))), data.iloc[:, -1],
                 color=color, label=os.path.basename(path))
 
     ax.legend(loc='best')
 
-    plt.savefig(os.path.join(root_path, 'result.svg'))
+    plt.savefig(save_file_name)
     plt.show()
 
 def plot_multiple_avg(root_path,save_file_name = 'result',num_iter = 1000000):
@@ -68,8 +71,22 @@ def main():
     args = sys.argv
     root_path = args[1]
 
-    # plot_multiple(root_path)
-    plot_multiple_avg(root_path)
+    plot_multiple(root_path)
+    # plot_multiple_avg(root_path)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--header',action='store_true')
+    parser.add_argument('-p','--path',type=str,default='')
+    parser.add_argument('--plot_avg',action='store_true')
+
+    args = parser.parse_args()
+
+    HEADER = args.header
+    PATH = args.path
+    PLOT_AVG = args.plot_avg
+
+    if PLOT_AVG:
+        plot_multiple_avg(PATH)
+    else:
+        plot_multiple(PATH,header=HEADER)

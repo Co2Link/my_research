@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     assert MEMORY_SOTRATION_SIZE < MAX_ITERATION, 'MEMORY_SOTRATION_SIZE < MAX_ITERATION'
 
-    logger = LogWriter(ROOT_PATH, BATCH_SIZE)
+    logger = LogWriter(ROOT_PATH)
     logger.save_setting(args)
 
     if args.test:

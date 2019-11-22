@@ -3,7 +3,7 @@ import time
 import csv
 
 class LogWriter():
-    def __init__(self, root_dir, batch_size, histogram_freq=0, write_graph=True, write_grads=False):
+    def __init__(self, root_dir, histogram_freq=0, write_graph=True, write_grads=False):
 
         self.root_dir = root_dir
 

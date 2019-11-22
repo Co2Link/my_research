@@ -11,5 +11,9 @@ from agents.ddqn import DDQN
 from atari_wrappers import *
 
 
-for i in range(100):
-    print(random.randint(0,10))
+a = torch.randn(2,3)
+
+print(a)
+a = torch.cat(a,dim=1)
+
+print(a)
