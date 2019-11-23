@@ -13,6 +13,6 @@ from atari_wrappers import *
 from model_based import test_predict,test_predict_multi
 
 
-model_path = "resul_WORLD/191123_042917/models/model_3.pt"
+model_path = "resul_WORLD/191123_042938/models/model_1.pt"
 # test_predict(model_path=model_path)
-test_predict_multi(model_path=model_path,prediction_step=20)
+test_predict_multi(model_path=model_path,prediction_step=10)

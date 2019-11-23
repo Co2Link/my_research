@@ -63,6 +63,11 @@ class State_predictor:
         # 9:1 for training and testing
         self.train_memories = memories[int(len(memories) / 10):]
         self.test_memories = memories[: int(len(memories) / 10)]
+
+        # Mean state
+        states, _, _, _ = zip(*memories)
+        self.mean_state = np.mean(np.array(states), axis=(0, 3))
+
         print(
             "*** traning size: {},testing size: {}".format(
                 len(self.train_memories), len(self.test_memories)
@@ -113,14 +118,28 @@ class State_predictor:
             state_s.append(state_)
 
         # Data formation
-        states = np.array(states).astype(np.float32) / 255.0
-        states = torch.Tensor(states.transpose((0, 3, 1, 2))).to(
-            self.device
-        )  # (N,84,84,4) => (N,4,84,84)
+        states = self.pre_process_states(np.array(states).transpose((0, 3, 1, 2)))
+        state_s = self.pre_process_states(np.array(state_s))
         actions = torch.from_numpy(np.array(actions)).to(self.device).float()
-        state_s = np.array(state_s).astype(np.float32) / 255.0
-        state_s = torch.from_numpy(state_s).to(self.device)
         return states, actions, state_s
+
+    def pre_process_states(self, states):
+        """
+        Args:
+            states: np.Array of shape (N,4,84,84)
+        """
+        # subtract mean_state
+        states = states-self.mean_state[None, None, :, :]
+        states = states.astype(np.float32) / 255.0
+        states = torch.from_numpy(states).to(self.device)
+        return states
+
+    def post_process_states(self, states):
+        """
+        Args:
+            states: np.Array of shape (N,STEP,84,84)
+        """
+        return states*255+self.mean_state[None, None, :, :]
 
     @timethis
     def save_model(self, path, info=""):
