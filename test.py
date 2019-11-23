@@ -10,11 +10,9 @@ from agents.evaluator import Evaluator
 from agents.ddqn import DDQN
 from atari_wrappers import *
 
+from model_based import test_predict,test_predict_multi
 
-curriculum_params={
-    "prediction_steps": [1, 3, 5],
-    "lr": [1e-4, 1e-5, 1e-5],
-    "n_epoches": [int(1e3), int(2 * 1e3), int(2 * 1e3)],
-}
 
-print(str(curriculum_params))
+model_path = "resul_WORLD/191123_042917/models/model_3.pt"
+# test_predict(model_path=model_path)
+test_predict_multi(model_path=model_path,prediction_step=20)

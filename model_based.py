@@ -16,6 +16,7 @@ from logWriter import LogWriter
 
 torch.set_num_threads(1)
 
+
 class State_predictor:
     def __init__(
         self, n_actions, memory_path="", logger=None, gpu="0", model_path=None
@@ -60,7 +61,7 @@ class State_predictor:
         self.zero_array = np.zeros(np.shape(memories[0][0]))
 
         # 9:1 for training and testing
-        self.train_memories = memories[int(len(memories) / 10) :]
+        self.train_memories = memories[int(len(memories) / 10):]
         self.test_memories = memories[: int(len(memories) / 10)]
         print(
             "*** traning size: {},testing size: {}".format(
@@ -68,7 +69,7 @@ class State_predictor:
             )
         )
 
-    def _sample_batch(self, batch_size, prediction_step=1, is_test=False):
+    def _sample_batch(self, batch_size=32, prediction_step=1, is_test=False):
         """
         Output:
             states: batch of current state (N,4,84,84)
@@ -88,7 +89,7 @@ class State_predictor:
             idx = random.randint(0, len(memories) - prediction_step)
             dones = [
                 True if np.array_equal(memory[-1], self.zero_array) else False
-                for memory in memories[idx : idx + prediction_step]
+                for memory in memories[idx: idx + prediction_step]
             ]
             if True in dones:
                 continue
@@ -100,7 +101,8 @@ class State_predictor:
         for idx in idxes:
             states.append(memories[idx][0])
 
-            action = [memories[idx + step][1] for step in range(prediction_step)]
+            action = [memories[idx + step][1]
+                      for step in range(prediction_step)]
             one_hot_action = np.zeros((prediction_step, self.n_actions))
             one_hot_action[np.arange(prediction_step), action] = 1
             actions.append(one_hot_action)
@@ -142,7 +144,6 @@ class State_predictor:
             "lr": [1e-4, 1e-5, 1e-5],
             "n_epoches": [int(1e5), int(2 * 1e5), int(2 * 1e5)],
         },
-        batch_size=32,
     ):
 
         for step, prediction_step in enumerate(curriculum_params["prediction_steps"]):
@@ -153,18 +154,19 @@ class State_predictor:
                 lr=curriculum_params["lr"][step],
             )
 
-    def train(self, prediction_step=1, batch_size=32, n_epoch=10000, lr=1e-4):
+    def train(self, prediction_step=1, n_epoch=10000, lr=1e-4):
 
         # Standar output
-        print("*** trainning params: prediction_step({}), batch_size({}), n_epoch({}), lr({}) ***".format(prediction_step,batch_size,n_epoch,lr))
+        print("*** trainning params: prediction_step({}), n_epoch({}), lr({}) ***".format(
+            prediction_step, n_epoch, lr))
         # Set learning rate
         for g in self.opt.param_groups:
-            g['lr']=lr
+            g['lr'] = lr
 
-        for _ in tqdm(range(n_epoch),ascii=True):
+        for _ in tqdm(range(n_epoch), ascii=True):
 
             states, actions, state_s = self._sample_batch(
-                batch_size, prediction_step=prediction_step
+                prediction_step=prediction_step
             )
 
             input_states = states
@@ -174,7 +176,8 @@ class State_predictor:
                     input_states, actions[:, step, :]
                 )  # shape (N,1,84,84)
                 outputs.append(output)
-                input_states = torch.cat((input_states[:, :3, :, :], output), dim=1)
+                input_states = torch.cat(
+                    (input_states[:, :3, :, :], output), dim=1)
 
             outputs = torch.cat(outputs, dim=1)  # shape (N,STEP,84,84)
 
@@ -190,7 +193,7 @@ class State_predictor:
                 self.logger.add_loss([loss.item()])
 
         if self.logger is not None:
-            self.logger.save_model(self,info=str(prediction_step))
+            self.logger.save_model(self, info=str(prediction_step))
 
 
 def test_sample():
@@ -199,7 +202,7 @@ def test_sample():
     memory_path = "result/191119_214214/memories.pkl"
 
     sp = State_predictor(4, 4, memory_path)
-    states, actions, state_s = sp._sample_batch(32)
+    states, actions, state_s = sp._sample_batch()
     print(states.shape, actions.shape, state_s.shape)
 
     fig, axes = plt.subplots(1, 5)
@@ -212,14 +215,11 @@ def test_sample():
     plt.show()
 
 
-def test_predict():
+def test_predict(memory_path="result/191119_214214/memories.pkl", model_path="result_WORLD/191122_175903/models/model.pt"):
     import matplotlib.pyplot as plt
-
-    memory_path = "result/191119_214214/memories.pkl"
-    model_path = "result_WORLD/191122_175903/models/model.pt"
     sp = State_predictor(4, memory_path=memory_path, model_path=model_path)
 
-    states, actions, state_s = sp._sample_batch(32, is_test=True)
+    states, actions, state_s = sp._sample_batch(is_test=True)
     print(actions.size(), state_s.size())
     output = sp.predict(states, actions[:, 0, :])
 
@@ -242,33 +242,64 @@ def test_predict():
         plt.show()
 
 
+def test_predict_multi(memory_path="result/191119_214214/memories.pkl", model_path="result_WORLD/191122_175903/models/model.pt", prediction_step=3):
+
+    import matplotlib.pyplot as plt
+    sp = State_predictor(4, memory_path=memory_path, model_path=model_path)
+
+    states, actions, state_s = sp._sample_batch(
+        prediction_step=prediction_step, is_test=True)
+
+    input_states = states
+    outputs = []
+    for step in range(prediction_step):
+        output = sp.predict(input_states, actions[:, step, :])
+        outputs.append(output)
+        input_states = torch.cat((input_states[:, :3, :, :], output), dim=1)
+
+    outputs = torch.cat(outputs, dim=1)
+
+    state_s = state_s.data.cpu().numpy()
+    outputs = outputs.data.cpu().numpy()
+    for i in range(32):
+        fig, axes = plt.subplots(2, prediction_step)
+        for step in range(prediction_step):
+            axes[0, step].imshow(outputs[i, step, :, :],
+                                 interpolation='nearest')
+            axes[0, step].set_title('predict_{}'.format(str(step)))
+            axes[1, step].imshow(state_s[i, step, :, :],
+                                 interpolation='nearest')
+            axes[1, step].set_title('real_{}'.format(str(step)))
+        plt.show()
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--curriculum',action='store_true')
+    parser.add_argument('--curriculum', action='store_true')
 
     args = parser.parse_args()
 
     CURRICULUM = args.curriculum
 
-    curriculum_params={
+    curriculum_params = {
         "prediction_steps": [1, 3, 5],
         "lr": [1e-4, 1e-5, 1e-5],
         "n_epoches": [int(1e5), int(2 * 1e5), int(2 * 1e5)],
     }
 
-    train_params={
-        'prediction_step' : 1,
-        'n_epoch':500000,
-        'lr' : 1e-5,
+    train_params = {
+        'prediction_step': 1,
+        'n_epoch': 500000,
+        'lr': 1e-5,
     }
 
     memory_path = "result/191119_214214/memories.pkl"
 
     args = vars(args)
-    args['curriculum_params']=str(curriculum_params)
-    args['train_params']=str(train_params)
-    args['memory_path']=memory_path
+    args['curriculum_params'] = str(curriculum_params)
+    args['train_params'] = str(train_params)
+    args['memory_path'] = memory_path
 
     logger = LogWriter("result_WORLD")
 
@@ -279,4 +310,5 @@ if __name__ == "__main__":
     if CURRICULUM:
         sp.train_curriculum(curriculum_params=curriculum_params)
     else:
-        sp.train(prediction_step=train_params['prediction_step'],n_epoch=train_params['n_epoch'],lr=train_params['lr'])
+        sp.train(prediction_step=train_params['prediction_step'],
+                 n_epoch=train_params['n_epoch'], lr=train_params['lr'])
