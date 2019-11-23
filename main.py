@@ -24,7 +24,7 @@ def ddqn_main(logger):
             force=True,
         )
 
-    env = wrap_deepmind(env, frame_stack=True, scale=True)
+    env = wrap_deepmind(env, frame_stack=True)
 
     runner = Normal_runner(
         EPS_START, EPS_END, EPS_STEP, logger, RENDER, SAVE_MODEL_INTERVAL
