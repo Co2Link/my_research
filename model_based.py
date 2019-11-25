@@ -200,12 +200,12 @@ class State_predictor:
 
             outputs = torch.cat(outputs, dim=1)  # shape (N,STEP,84,84)
 
-            loss = F.mse_loss(outputs, state_s,reduction='sum')
+            loss = F.mse_loss(outputs, state_s,reduce=False)
 
             if loss_clip:
                 loss = torch.clamp(loss,min=loss_clip)
 
-            loss = (1 / prediction_step) * loss
+            loss = (1 / prediction_step) * loss.sum()
 
             self.opt.zero_grad()
 
