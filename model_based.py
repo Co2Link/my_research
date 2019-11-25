@@ -118,12 +118,12 @@ class State_predictor:
             state_s.append(state_)
 
         # Data formation
-        states = self.pre_process_states(np.array(states).transpose((0, 3, 1, 2)))
-        state_s = self.pre_process_states(np.array(state_s))
+        states = self._pre_process_states(np.array(states).transpose((0, 3, 1, 2)))
+        state_s = self._pre_process_states(np.array(state_s))
         actions = torch.from_numpy(np.array(actions)).to(self.device).float()
         return states, actions, state_s
 
-    def pre_process_states(self, states):
+    def _pre_process_states(self, states):
         """
         Args:
             states: np.Array of shape (N,4,84,84)
@@ -134,12 +134,12 @@ class State_predictor:
         states = torch.from_numpy(states).to(self.device)
         return states
 
-    def post_process_states(self, states):
+    def _post_process_states(self, state):
         """
         Args:
-            states: np.Array of shape (N,STEP,84,84)
+            state: np.Array of shape (N,1,84,84)
         """
-        return states*255+self.mean_state[None, None, :, :]
+        return state.data.cpu().numpy()*255+self.mean_state[None, None, :, :]
 
     @timethis
     def save_model(self, path, info=""):
@@ -154,7 +154,7 @@ class State_predictor:
         torch.save(self.model.state_dict(), path_with_file_name)
 
     def predict(self, state, action):
-        return self.model(state, action)
+        return self._post_process_states(self.model(state, action))
 
     def train_curriculum(
         self,
@@ -173,7 +173,7 @@ class State_predictor:
                 lr=curriculum_params["lr"][step],
             )
 
-    def train(self, prediction_step=1, n_epoch=10000, lr=1e-4):
+    def train(self, prediction_step=1, n_epoch=10000, lr=1e-4,loss_clip=0):
 
         # Standar output
         print("*** trainning params: prediction_step({}), n_epoch({}), lr({}) ***".format(
@@ -200,7 +200,12 @@ class State_predictor:
 
             outputs = torch.cat(outputs, dim=1)  # shape (N,STEP,84,84)
 
-            loss = (1 / prediction_step) * F.mse_loss(outputs, state_s)
+            loss = F.mse_loss(outputs, state_s,reduction='sum')
+
+            if loss_clip:
+                loss = torch.clamp(loss,min=loss_clip)
+
+            loss = (1 / prediction_step) * loss
 
             self.opt.zero_grad()
 
@@ -242,7 +247,6 @@ def test_predict(memory_path="result/191119_214214/memories.pkl", model_path="re
     print(actions.size(), state_s.size())
     output = sp.predict(states, actions[:, 0, :])
 
-    output = output.data.cpu().numpy()
     state_s = state_s.data.cpu().numpy()
     states = states.data.cpu().numpy()
 
@@ -272,14 +276,14 @@ def test_predict_multi(memory_path="result/191119_214214/memories.pkl", model_pa
     input_states = states
     outputs = []
     for step in range(prediction_step):
-        output = sp.predict(input_states, actions[:, step, :])
+        output = sp.model(input_states, actions[:, step, :])
         outputs.append(output)
         input_states = torch.cat((input_states[:, :3, :, :], output), dim=1)
 
     outputs = torch.cat(outputs, dim=1)
 
-    state_s = state_s.data.cpu().numpy()
-    outputs = outputs.data.cpu().numpy()
+    state_s = sp._post_process_states(state_s)
+    outputs = sp._post_process_states(outputs)
     for i in range(32):
         fig, axes = plt.subplots(2, prediction_step)
         for step in range(prediction_step):
@@ -296,10 +300,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--curriculum', action='store_true')
+    parser.add_argument('--loss_clip',type=float,default=0)
 
     args = parser.parse_args()
 
     CURRICULUM = args.curriculum
+    LOSS_CLIP = args.loss_clip
 
     curriculum_params = {
         "prediction_steps": [1, 3, 5],
@@ -330,4 +336,4 @@ if __name__ == "__main__":
         sp.train_curriculum(curriculum_params=curriculum_params)
     else:
         sp.train(prediction_step=train_params['prediction_step'],
-                 n_epoch=train_params['n_epoch'], lr=train_params['lr'])
+                 n_epoch=train_params['n_epoch'], lr=train_params['lr'],loss_clip=LOSS_CLIP)
