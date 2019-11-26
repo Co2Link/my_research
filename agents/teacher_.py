@@ -61,4 +61,25 @@ class Teacher(DDQN):
         o_batch = [self.o_m[ind] for ind in index]
 
         return np.array(s_batch), np.array(o_batch)
+
     
+class Teacher_world_model(DDQN):
+    def __init__(self, load_model_path, hparams,state_predictor):
+        DDQN.__init__(self,logger=None, load_model_path=load_model_path,
+                      hparams=hparams, inference=True)
+
+        self.mem_gen = self._memory_generator()
+
+        self.sp = state_predictor
+
+        self.s_m=deque(maxlen=hparams['mem_size'])
+        self.o_m=deque(maxlen=hparams['mem_size'])
+        
+    def _memory_generator(self):
+        state,action,_ = self.sp._sample_batch(self,1,1)
+        input_state = state
+
+        self.model(input_state)
+        next_state = self.sp.model(state,action[:,0,:])
+
+        input_state = torch.cat((input_state[:,1:,:,:],next_state),dim=1)

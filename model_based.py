@@ -137,7 +137,7 @@ class State_predictor:
     def _post_process_states(self, state):
         """
         Args:
-            state: np.Array of shape (N,1,84,84)
+            state: np.Array of shape (N,STEP,84,84)
         """
         return state.data.cpu().numpy()*255+self.mean_state[None, None, :, :]
 
@@ -196,7 +196,7 @@ class State_predictor:
                 )  # shape (N,1,84,84)
                 outputs.append(output)
                 input_states = torch.cat(
-                    (input_states[:, :3, :, :], output), dim=1)
+                    (input_states[:, 1:, :, :], output), dim=1)
 
             outputs = torch.cat(outputs, dim=1)  # shape (N,STEP,84,84)
 
@@ -219,7 +219,28 @@ class State_predictor:
         if self.logger is not None:
             self.logger.save_model(self, info=str(prediction_step))
 
+class Wrapper_sp(State_predictor):
+    def __init__(self,hparams,memory_path,model_path):
+        State_predictor.__init__(self,n_actions=hparams['n_action'],memory_path=memory_path,model_path=model_path)
+        self.state = None # shape (1,4,84,84)
 
+    def reset(self):
+        state,_,_ = self._sample_batch(1,1)
+        self.state = state
+        return self._post_process_states(self.state).squeeze().transpose((1,2,0)) # shape (84,84,4)
+    
+    def step(self,action):
+        """
+        Args:
+            action: int
+        """
+        one_hot_action = np.zeros((1,self.n_actions))
+        one_hot_action[0,action] = 1
+        action = torch.from_numpy(one_hot_action).to(self.device).float() # shape (1,n_action)
+        next_state = self.model(self.state,action)
+
+        self.state = torch.cat((self.state[:,1:,:,:],next_state),dim=1)
+        return self._post_process_states(self.state).squeeze().transpose((1,2,0))
 
 
 if __name__ == "__main__":
