@@ -7,6 +7,8 @@ from runners.normal_runner import Normal_runner
 from logWriter import LogWriter
 import time
 import torch
+import csv
+
 from atari_wrappers import *
 
 torch.set_num_threads(1)
@@ -63,27 +65,16 @@ def ddqn_main(logger):
         logger.save_as_csv(data, 'eval_rewards.csv')
 
 def test():
-    root_path = 'result/191115_180529'
 
-    model_path = os.path.join(root_path,'models','model_final.pt')
-
-    game_name = ''
-
-    with open(os.path.join(root_path,'setting.csv'),'r') as f:
-        reader = csv.reader(f)
-        setting_dict = {row[0]: row[1] for row in reader}
-        game_name = setting_dict['game']
-
-    env = make_atari(game_name)
-    env = wrap_deepmind(env,frame_stack=True,scale=True)
+    env = make_atari('BreakoutNoFrameskip-v4')
+    env = wrap_deepmind(env,frame_stack=True)
 
     hparams = {'n_actions':env.action_space.n,'net_size':'normal','state_shape':env.observation_space.shape}
 
-    agent = DDQN(None,model_path,hparams)
+    agent = DDQN(None,LOAD_MODEL_PATH,hparams,inference=True)
 
-    Evaluator(agent,env).play()
-
-
+    e = Evaluator(agent,env)
+    e.evaluate()
 if __name__ == "__main__":
     start_time = time.time()
 

@@ -32,46 +32,6 @@ def SingleDistillation_main():
     logger.save_model_arch(student)
     logger.log_total_time_cost()
 
-
-def Evaluation_deprecate():
-    """
-    evaluation the performance of both teacher and students under Single-target-distillation situation
-    there should be only one model file and csv file under the directory of './model/teacher'
-    multiple log directory under path of './result_DT'
-    """
-
-    # get the game_name from setting.csv
-    with open(glob.glob('./model/teacher/*.csv')[0]) as f:
-        reader = csv.reader(f)
-        settings_dict = {row[0]: row[1] for row in reader}
-    game_name = settings_dict['game']
-    print("*** GAME of teacher:{} ***".format(game_name))
-
-    # make environment
-    env = make_atari(GAME)
-    env = wrap_deepmind(env, frame_stack=True, scale=True)
-
-    # log
-    root = 'result_EVAL'
-    if not os.path.exists(root):
-        os.mkdir(root)
-        print('*** Create folder: {} ***'.format(root))
-    now_time = time.strftime('%y%m%d_%H%M%S', time.localtime())
-    save_path = os.path.join(root, now_time).replace('\\', '/')
-    if not os.path.exists(save_path):
-        os.mkdir(save_path)
-        print('*** Create folder: {} ***'.format(save_path))
-
-    # evaluate teacher
-    Teacher(glob.glob('./model/teacher/*.h5f')[0].replace(
-        '\\', '/'), env, eval_iteration=EVAL_ITERATION, is_small=True).evaluate(save_path)
-
-    # evaluate student
-    for log_path in glob.glob('./result_DT/*'):
-        Evaluator_deprecate(env, log_path.replace(
-            '\\', '/'), save_path, eval_iteration=EVAL_ITERATION).evaluate()
-
-
 def Evaluation():
     files_pathes = glob.glob('./model/evaluation/world_*')
 

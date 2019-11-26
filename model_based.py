@@ -220,80 +220,6 @@ class State_predictor:
             self.logger.save_model(self, info=str(prediction_step))
 
 
-def test_sample():
-    import matplotlib.pyplot as plt
-
-    memory_path = "result/191119_214214/memories.pkl"
-
-    sp = State_predictor(4, 4, memory_path)
-    states, actions, state_s = sp._sample_batch()
-    print(states.shape, actions.shape, state_s.shape)
-
-    fig, axes = plt.subplots(1, 5)
-
-    axes[0].imshow(states[0, :, :, -1], interpolation="nearest")
-    axes[0].set_title("moto")
-    for i in range(4):
-        axes[1 + i].imshow(state_s[0, i, :, :], interpolation="nearest")
-        axes[i + 1].set_title(str(i + 1))
-    plt.show()
-
-
-def test_predict(memory_path="result/191119_214214/memories.pkl", model_path="result_WORLD/191122_175903/models/model.pt"):
-    import matplotlib.pyplot as plt
-    sp = State_predictor(4, memory_path=memory_path, model_path=model_path)
-
-    states, actions, state_s = sp._sample_batch(is_test=True)
-    print(actions.size(), state_s.size())
-    output = sp.predict(states, actions[:, 0, :])
-
-    state_s = state_s.data.cpu().numpy()
-    states = states.data.cpu().numpy()
-
-    for b in range(32):
-        fig, axes = plt.subplots(1, 5)
-
-        for i in range(3):
-            axes[i].imshow(states[b, i + 1, :, :], interpolation="nearest")
-            axes[i].set_title(str(i))
-
-        axes[3].imshow(output[b, 0, :, :], interpolation="nearest")
-        axes[3].set_title("3 (predicted)")
-        axes[4].imshow(state_s[b, 0, :, :], interpolation="nearest")
-        axes[4].set_title("3 (real)")
-
-        plt.show()
-
-
-def test_predict_multi(memory_path="result/191119_214214/memories.pkl", model_path="result_WORLD/191122_175903/models/model.pt", prediction_step=3):
-
-    import matplotlib.pyplot as plt
-    sp = State_predictor(4, memory_path=memory_path, model_path=model_path)
-
-    states, actions, state_s = sp._sample_batch(
-        prediction_step=prediction_step, is_test=True)
-
-    input_states = states
-    outputs = []
-    for step in range(prediction_step):
-        output = sp.model(input_states, actions[:, step, :])
-        outputs.append(output)
-        input_states = torch.cat((input_states[:, :3, :, :], output), dim=1)
-
-    outputs = torch.cat(outputs, dim=1)
-
-    state_s = sp._post_process_states(state_s)
-    outputs = sp._post_process_states(outputs)
-    for i in range(32):
-        fig, axes = plt.subplots(2, prediction_step)
-        for step in range(prediction_step):
-            axes[0, step].imshow(outputs[i, step, :, :],
-                                 interpolation='nearest')
-            axes[0, step].set_title('predict_{}'.format(str(step)))
-            axes[1, step].imshow(state_s[i, step, :, :],
-                                 interpolation='nearest')
-            axes[1, step].set_title('real_{}'.format(str(step)))
-        plt.show()
 
 
 if __name__ == "__main__":
@@ -301,11 +227,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--curriculum', action='store_true')
     parser.add_argument('--loss_clip',type=float,default=0)
+    parser.add_argument('--test',action='store_true')
+    parser.add_argument('--model_path',type=str,default='')
+    parser.add_argument('--prediction_step',type=int,default=10)
+    parser.add_argument('--model_path_1',type=str,default='')
+    parser.add_argument('--model_path_2',type=str,default='')
 
     args = parser.parse_args()
 
     CURRICULUM = args.curriculum
     LOSS_CLIP = args.loss_clip
+    TEST = args.test
+    MODEL_PATH = args.model_path
+    PREDICTION_STEP = args.prediction_step
+    MODEL_PATH_1 = args.model_path_1
+    MODEL_PATH_2 = args.model_path_2
 
     curriculum_params = {
         "prediction_steps": [1, 3, 5],
@@ -334,6 +270,9 @@ if __name__ == "__main__":
 
     if CURRICULUM:
         sp.train_curriculum(curriculum_params=curriculum_params)
+    elif TEST:
+        from test.test_state_predictor import test_predict,test_predict_multi,test_predict_multi_with_models
+        test_predict_multi_with_models(model_path_1=MODEL_PATH_1,model_path_2=MODEL_PATH_2,prediction_step=PREDICTION_STEP)
     else:
         sp.train(prediction_step=train_params['prediction_step'],
                  n_epoch=train_params['n_epoch'], lr=train_params['lr'],loss_clip=LOSS_CLIP)

@@ -13,7 +13,7 @@ from rl_networks import Nature_CNN
 from agents.base import Agent, MemoryStorer, Memory
 
 
-class DDQN(Agent, MemoryStorer):
+class DDQN(Agent):
     """
     Double-Deep-Q-Learning
     almost the same implementation as the DQN-paper( Human-Level... )
@@ -23,10 +23,10 @@ class DDQN(Agent, MemoryStorer):
 
     Args:
         hparams:{'lr','gamma','memory_size','batch_size','net_size',
-                memory_storation_size','state_shape','n_actions'}
+                state_shape','n_actions'}
     """
 
-    def __init__(self, logger, load_model_path, hparams, gpu='0'):
+    def __init__(self, logger, load_model_path, hparams, inference=False, gpu='0'):
         Agent.__init__(self, hparams['state_shape'],
                        hparams['n_actions'], logger)
 
@@ -41,10 +41,11 @@ class DDQN(Agent, MemoryStorer):
         self.target = Nature_CNN(
             self.hparams['n_actions'], hparams['net_size'])
 
-        # Load model for inference otherwies set for training
+        # Load model for inference or continuing training
         if load_model_path:
             self.model.load_state_dict(torch.load(load_model_path))
-        else:
+        # Set for training 
+        if not inference:
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=self.hparams['lr'])
 
@@ -92,6 +93,10 @@ class DDQN(Agent, MemoryStorer):
         self.memories.append(Memory(s, a, r, s_))
 
     def select_action(self, state):
+        """
+        Args:
+            state: np.Array with shape (H,W,C)
+        """
         state = self.input_to_device(np.expand_dims(np.array(state), axis=0))
         output = self.model(state)
         action = torch.argmax(output).item()

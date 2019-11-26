@@ -54,10 +54,11 @@ class Evaluator:
 
         return avg_ep_reward, self.ep_rewards
 
-    def play(self, epsilon=0.5):
+    def play(self, epsilon=0.05):
         state = self.env.reset()
 
         while True:
+            time.sleep(0.01)
             self.env.render()
 
             if epsilon <= np.random.uniform(0, 1):
