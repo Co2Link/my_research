@@ -287,13 +287,14 @@ if __name__ == "__main__":
 
     logger.save_setting(args)
 
-    sp = State_predictor(4, memory_path=memory_path, logger=logger)
-
     if CURRICULUM:
+        sp = State_predictor(4, memory_path=memory_path, logger=logger)
         sp.train_curriculum(curriculum_params=curriculum_params)
     elif TEST:
         from test.test_state_predictor import test_predict,test_predict_multi,test_predict_multi_with_models
-        test_predict_multi_with_models(model_path_1=MODEL_PATH_1,model_path_2=MODEL_PATH_2,prediction_step=PREDICTION_STEP)
+        test_predict_multi(model_path=MODEL_PATH,prediction_step=PREDICTION_STEP)
+        # test_predict_multi_with_models(model_path_1=MODEL_PATH_1,model_path_2=MODEL_PATH_2,prediction_step=PREDICTION_STEP)
     else:
+        sp = State_predictor(4, memory_path=memory_path, logger=logger)
         sp.train(prediction_step=train_params['prediction_step'],
                  n_epoch=train_params['n_epoch'], lr=train_params['lr'],loss_clip=LOSS_CLIP)

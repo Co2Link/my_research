@@ -56,7 +56,7 @@ def test_predict_multi(memory_path="result/191119_214214/memories.pkl", model_pa
     for step in range(prediction_step):
         output = sp.model(input_states, actions[:, step, :])
         outputs.append(output)
-        input_states = torch.cat((input_states[:, :3, :, :], output), dim=1)
+        input_states = torch.cat((input_states[:, 1:, :, :], output), dim=1)
 
     outputs = torch.cat(outputs, dim=1)
 
@@ -88,8 +88,8 @@ def test_predict_multi_with_models(model_path_1,model_path_2,memory_path="result
         output_2 = sp_2.model(input_states_2, actions[:, step, :])
         outputs_1.append(output_1)
         outputs_2.append(output_2)
-        input_states_1 = torch.cat((input_states_1[:, :3, :, :], output_1), dim=1)
-        input_states_2 = torch.cat((input_states_2[:, :3, :, :], output_2), dim=1)
+        input_states_1 = torch.cat((input_states_1[:, 1:, :, :], output_1), dim=1)
+        input_states_2 = torch.cat((input_states_2[:, 1:, :, :], output_2), dim=1)
 
     outputs_1 = torch.cat(outputs_1, dim=1)
     outputs_2 = torch.cat(outputs_2, dim=1)
