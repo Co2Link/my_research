@@ -22,7 +22,7 @@ class Evaluator:
 
         self.ep_rewards = []
 
-    def evaluate(self, epsilon=0.05, eval_iteration=100000, info=''):
+    def evaluate(self, epsilon=0.05, eval_iteration=300000, info=''):
 
         print("*** Evaluating{} ***".format(info))
 

@@ -221,7 +221,7 @@ class State_predictor:
 
 class Wrapper_sp(State_predictor):
     def __init__(self,hparams,memory_path,model_path):
-        State_predictor.__init__(self,n_actions=hparams['n_action'],memory_path=memory_path,model_path=model_path)
+        State_predictor.__init__(self,n_actions=hparams['n_actions'],memory_path=memory_path,model_path=model_path)
         self.state = None # shape (1,4,84,84)
 
     def reset(self):

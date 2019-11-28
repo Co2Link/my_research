@@ -5,6 +5,7 @@ from collections import deque
 
 from agents.ddqn import DDQN
 from atari_wrappers import make_atari,wrap_deepmind
+from model_based import Wrapper_sp
 
 class Teacher(DDQN):
 
@@ -63,23 +64,31 @@ class Teacher(DDQN):
         return np.array(s_batch), np.array(o_batch)
 
     
-class Teacher_world_model(DDQN):
-    def __init__(self, load_model_path, hparams,state_predictor):
-        DDQN.__init__(self,logger=None, load_model_path=load_model_path,
-                      hparams=hparams, inference=True)
+class Teacher_world_model(Teacher):
+    def __init__(self, load_model_path, hparams,env):
+        Teacher.__init__(self,load_model_path=load_model_path,hparams=hparams,env=env)
+    def _memory_generator(self,env):
 
-        self.mem_gen = self._memory_generator()
+        counter = 0
 
-        self.sp = state_predictor
+        state = env.reset()
 
-        self.s_m=deque(maxlen=hparams['mem_size'])
-        self.o_m=deque(maxlen=hparams['mem_size'])
-        
-    def _memory_generator(self):
-        state,action,_ = self.sp._sample_batch(self,1,1)
-        input_state = state
+        while True:
 
-        self.model(input_state)
-        next_state = self.sp.model(state,action[:,0,:])
+            if self.hparams['eps'] <= np.random.uniform(0, 1):
+                action, output = self._select_action(state)
+                # generate memory
+                yield state, output
+            else:
+                action = np.random.randint(0,self.hparams['n_actions'])
 
-        input_state = torch.cat((input_state[:,1:,:,:],next_state),dim=1)
+            # step
+            state_= env.step(action)
+
+            counter+=1
+
+            # reset environment
+            if counter%5 == 0:
+                state_ = env.reset()
+
+            state = state_

@@ -69,12 +69,16 @@ def test():
     env = make_atari('BreakoutNoFrameskip-v4')
     env = wrap_deepmind(env,frame_stack=True)
 
-    hparams = {'n_actions':env.action_space.n,'net_size':'normal','state_shape':env.observation_space.shape}
+    hparams = {'n_actions':env.action_space.n,'net_size':NET_SIZE,'state_shape':env.observation_space.shape}
 
     agent = DDQN(None,LOAD_MODEL_PATH,hparams,inference=True)
 
-    e = Evaluator(agent,env)
-    e.evaluate()
+    avg_episode_reward, ep_rewards = Evaluator(agent, env).evaluate(eval_iteration=1000000)
+
+    ep_rewards.insert(0, avg_episode_reward)
+    data = [(reward,) for reward in ep_rewards]
+    logger.save_as_csv(data, 'eval_rewards.csv')
+
 if __name__ == "__main__":
     start_time = time.time()
 

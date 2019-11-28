@@ -5,12 +5,15 @@ import torch
 
 from logWriter import LogWriter
 from atari_wrappers import make_atari, wrap_deepmind
-from agents.teacher_ import Teacher
+from agents.teacher_ import Teacher, Teacher_world_model
 from agents.student_ import SingleDtStudent
+from model_based import Wrapper_sp, State_predictor
 
 torch.set_num_threads(1)
 
+
 def SingleDistillation_main():
+
     logger = LogWriter(ROOT_PATH)
     logger.save_setting(vars(args))
 
@@ -21,10 +24,39 @@ def SingleDistillation_main():
     env = make_atari(game_name)
     env = wrap_deepmind(env, frame_stack=True)
     teacher_hparams = {'n_actions': env.action_space.n,
-                       'net_size': setting_dict['net_size'], 'state_shape': env.observation_space.shape,'eps':EPSILON,'mem_size':MEM_SIZE}
+                       'net_size': setting_dict['net_size'], 'state_shape': env.observation_space.shape, 'eps': EPSILON, 'mem_size': MEM_SIZE}
     teacher = Teacher(load_model_path=os.path.join(
         SOURCE_LOG_PATH, 'models', 'model_final.pt'), hparams=teacher_hparams, env=env)
-    student_hparams = {'n_actions': env.action_space.n, 'net_size': TARGET_NET_SIZE, 'state_shape': env.observation_space.shape, 'lr': LEARNING_RATE, 'epoch': EPOCH, 'add_mem_num': ADD_MEM_NUM, 'n_update':N_UPDATE}
+    student_hparams = {'n_actions': env.action_space.n, 'net_size': TARGET_NET_SIZE, 'state_shape': env.observation_space.shape,
+                       'lr': LEARNING_RATE, 'epoch': EPOCH, 'add_mem_num': ADD_MEM_NUM, 'n_update': N_UPDATE}
+    student = SingleDtStudent(logger, student_hparams)
+    student.distill(teacher)
+
+    logger.save_model(student)
+
+
+def DtWorldModel_main():
+    logger = LogWriter(ROOT_PATH)
+    logger.save_setting(vars(args))
+
+    with open(os.path.join(SOURCE_LOG_PATH, 'setting.csv'), 'r') as f:
+        setting_dict = {row[0]: row[1] for row in csv.reader(f)}
+        game_name = setting_dict['game']
+
+    real_env = wrap_deepmind(make_atari(game_name), frame_stack=True)
+
+    world_env = Wrapper_sp({'n_actions': real_env.action_space.n}, memory_path=os.path.join(
+        SOURCE_LOG_PATH, 'memories.pkl'), model_path=WORLD_MODEL_PATH)
+
+    teacher_hparams = {'n_actions': real_env.action_space.n,
+                       'net_size': setting_dict['net_size'], 'state_shape': real_env.observation_space.shape, 'eps': EPSILON, 'mem_size': MEM_SIZE}
+
+    teacher = Teacher_world_model(load_model_path=os.path.join(
+        SOURCE_LOG_PATH, 'models', 'model_final.pt'), hparams=teacher_hparams, env=world_env)
+
+    student_hparams = {'n_actions': real_env.action_space.n, 'net_size': TARGET_NET_SIZE, 'state_shape': real_env.observation_space.shape,
+                       'lr': LEARNING_RATE, 'epoch': EPOCH, 'add_mem_num': ADD_MEM_NUM, 'n_update': N_UPDATE}
+
     student = SingleDtStudent(logger, student_hparams)
     student.distill(teacher)
 
@@ -33,6 +65,7 @@ def SingleDistillation_main():
 
 def test():
     pass
+
 
 def Evaluation():
     pass
@@ -48,7 +81,9 @@ if __name__ == "__main__":
     parser.add_argument('--mem_size', type=int, default=int(5e4))
     parser.add_argument('-r', '--root_path', type=str, default='./result_DT')
     parser.add_argument('--source_log_path', type=str,
-                        default='result/191119_214214')
+                        default='result/191125_160646')
+    parser.add_argument('--world_model_path', type=str,
+                        default='result_WORLD/191126_190253/models/model_5.pt')
     parser.add_argument('--target_net_size', type=str, default='normal')
     parser.add_argument('--test', action='store_true')
     parser.add_argument('-eval', '--evaluate', action='store_true')
@@ -66,10 +101,11 @@ if __name__ == "__main__":
     SOURCE_LOG_PATH = args.source_log_path
     EVAL_ITERATION = args.eval_iteration
     TARGET_NET_SIZE = args.target_net_size
+    WORLD_MODEL_PATH = args.world_model_path
 
     if args.test:
         test()
     elif args.distillate:
-        SingleDistillation_main()
+        DtWorldModel_main()
     elif args.evaluate:
         Evaluation()

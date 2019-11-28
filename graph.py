@@ -9,8 +9,18 @@ import sys
 
 COLOR = ['b','g','r','c','m','y','k','w']
 
+def smooth(scalars, weight):
+    last = scalars[0]  # First value in the plot (first timestep)
+    smoothed = []
+    for point in scalars:
+        smoothed_val = last * weight + (1 - weight) * point  # Calculate smoothed value
+        smoothed.append(smoothed_val)                        # Save it
+        last = smoothed_val                                  # Anchor the last smoothed value
 
-def plot_multiple(root_path,header=False,save_file_name = 'result'):
+    return smoothed
+
+
+def plot_multiple(root_path,header=False,save_file_name = 'result',smooth_weight = 0):
     """Plot multiple line
 
     each row should be like (index,value),
@@ -30,7 +40,7 @@ def plot_multiple(root_path,header=False,save_file_name = 'result'):
         data = pd.read_csv(path, header=header)
         
         color = path.split('-')[1][0] if '-' in path and path.split('-')[1][0] in COLOR else np.random.rand(3)
-        ax.plot(list(range(len(data))), data.iloc[:, -1],
+        ax.plot(list(range(len(data))), smooth(data.iloc[:, -1],smooth_weight),
                 color=color, label=os.path.basename(path))
 
     ax.legend(loc='best')
@@ -79,14 +89,16 @@ if __name__ == "__main__":
     parser.add_argument('--header',action='store_true')
     parser.add_argument('-p','--path',type=str,default='')
     parser.add_argument('--plot_avg',action='store_true')
+    parser.add_argument('--smooth_weight',type=float,default=0.0)
 
     args = parser.parse_args()
 
     HEADER = args.header
     PATH = args.path
     PLOT_AVG = args.plot_avg
+    SMOOTH_WEIGHT = args.smooth_weight
 
     if PLOT_AVG:
         plot_multiple_avg(PATH)
     else:
-        plot_multiple(PATH,header=HEADER)
+        plot_multiple(PATH,header=HEADER,smooth_weight=SMOOTH_WEIGHT)
