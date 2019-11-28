@@ -50,7 +50,7 @@ class SingleDtStudent:
     def distill(self, teacher):
 
         for _ in tqdm(range(self.hparams['epoch'])):
-            
+
             teacher.add_memories(self.hparams['add_mem_num'])
 
             for _ in range(self.hparams['n_update']):
@@ -82,3 +82,13 @@ class SingleDtStudent:
             os.remove(path_with_file_name)
 
         torch.save(self.model.state_dict(), path_with_file_name)
+
+    def select_action(self, state):
+        """
+        Args:
+            state: np.Array with shape (H,W,C)
+        """
+        state = self.input_to_device(np.expand_dims(np.array(state), axis=0))
+        output = self.model(state)
+        action = torch.argmax(output).item()
+        return action

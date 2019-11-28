@@ -73,7 +73,7 @@ def test():
 
     agent = DDQN(None,LOAD_MODEL_PATH,hparams,inference=True)
 
-    avg_episode_reward, ep_rewards = Evaluator(agent, env).evaluate(eval_iteration=1000000)
+    avg_episode_reward, ep_rewards = Evaluator(agent, env).evaluate(eval_iteration=500000)
 
     ep_rewards.insert(0, avg_episode_reward)
     data = [(reward,) for reward in ep_rewards]

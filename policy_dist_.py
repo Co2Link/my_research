@@ -7,6 +7,7 @@ from logWriter import LogWriter
 from atari_wrappers import make_atari, wrap_deepmind
 from agents.teacher_ import Teacher, Teacher_world_model
 from agents.student_ import SingleDtStudent
+from  agents.evaluator import Evaluator
 from model_based import Wrapper_sp, State_predictor
 
 torch.set_num_threads(1)
@@ -33,6 +34,12 @@ def SingleDistillation_main():
     student.distill(teacher)
 
     logger.save_model(student)
+
+    avg_episode_reward, ep_rewards = Evaluator(student, env).evaluate(eval_iteration=500000)
+
+    ep_rewards.insert(0, avg_episode_reward)
+    data = [(reward,) for reward in ep_rewards]
+    logger.save_as_csv(data, 'eval_rewards.csv')
 
 
 def DtWorldModel_main():
@@ -62,6 +69,12 @@ def DtWorldModel_main():
 
     logger.save_model(student)
 
+    avg_episode_reward, ep_rewards = Evaluator(student, real_env).evaluate(eval_iteration=500000)
+
+    ep_rewards.insert(0, avg_episode_reward)
+    data = [(reward,) for reward in ep_rewards]
+    logger.save_as_csv(data, 'eval_rewards.csv')
+
 
 def test():
     pass
@@ -81,14 +94,14 @@ if __name__ == "__main__":
     parser.add_argument('--mem_size', type=int, default=int(5e4))
     parser.add_argument('-r', '--root_path', type=str, default='./result_DT')
     parser.add_argument('--source_log_path', type=str,
-                        default='result/191125_160646')
+                        default='')
     parser.add_argument('--world_model_path', type=str,
-                        default='result_WORLD/191126_190253/models/model_5.pt')
+                        default='')
     parser.add_argument('--target_net_size', type=str, default='normal')
     parser.add_argument('--test', action='store_true')
     parser.add_argument('-eval', '--evaluate', action='store_true')
     parser.add_argument('-dt', '--distillate', action='store_true')
-    parser.add_argument('--eval_iteration', type=int, default=int(1e5))
+    parser.add_argument('--eval_iteration', type=int, default=int(5e5))
     args = parser.parse_args()
 
     LEARNING_RATE = args.learning_rate
@@ -106,6 +119,9 @@ if __name__ == "__main__":
     if args.test:
         test()
     elif args.distillate:
-        DtWorldModel_main()
+        if WORLD_MODEL_PATH:
+            DtWorldModel_main()
+        else:
+            SingleDistillation_main()
     elif args.evaluate:
         Evaluation()
