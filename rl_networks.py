@@ -11,7 +11,7 @@ class Nature_CNN(nn.Module):
     def __init__(self, n_actions, size='normal',depth='normal'):
 
         Size = {'normal': 1, 'big': 2, 'super': 4, 'small': 0.5}
-        Depth = {'normal':0,'deep':1,'very deep':2}
+        Depth = {'normal':0,'deep':1,'very_deep':2}
         n = Size[size]
         self.k = Depth[depth]
 
