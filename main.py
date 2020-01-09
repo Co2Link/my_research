@@ -33,7 +33,7 @@ def ddqn_main(logger):
     )
 
     hparams = {'lr': LEARNING_RATE, 'gamma': GAMMA, 'memory_size': MAX_MEM_LEN, 'batch_size': BATCH_SIZE,
-               'net_size': NET_SIZE, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n}
+               'net_size': NET_SIZE,'net_depth':NET_DEPTH, 'state_shape': env.observation_space.shape, 'n_actions': env.action_space.n}
 
     ddqn_agent = DDQN(logger, LOAD_MODEL_PATH, hparams)
 
@@ -101,6 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("--game", type=str, default="BreakoutNoFrameskip-v4")
     parser.add_argument("--store_memory", action="store_true")
     parser.add_argument("--net_size", type=str, default="normal")
+    parser.add_argument("--net_depth", type=str, default="normal")
     parser.add_argument("--load_model_path", type=str, default="")
     parser.add_argument("--info", type=str, default='')
     parser.add_argument("--memory_storation_size", type=int, default=100000)
@@ -122,6 +123,7 @@ if __name__ == "__main__":
     GAME = args.game
     ROOT_PATH = args.root
     NET_SIZE = args.net_size
+    NET_DEPTH = args.net_depth
     LOAD_MODEL_PATH = args.load_model_path
     MEMORY_SOTRATION_SIZE = args.memory_storation_size
 

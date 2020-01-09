@@ -35,11 +35,12 @@ class DDQN(Agent):
 
         assert hparams['net_size'] in ['big', 'small', 'normal',
                                        'super'], "net_size must be one of ['big','small','normal']"
+        assert hparams['net_depth'] in ['normal', 'deep', 'very deep'], "net_depth must be one of ['normal', 'deep', 'very deep']"
         # Create model
         self.model = Nature_CNN(
-            self.hparams['n_actions'], hparams['net_size'])
+            self.hparams['n_actions'], hparams['net_size'],hparams['net_depth'])
         self.target = Nature_CNN(
-            self.hparams['n_actions'], hparams['net_size'])
+            self.hparams['n_actions'], hparams['net_size'],hparams['net_depth'])
 
         # Load model for inference or continuing training
         if load_model_path:

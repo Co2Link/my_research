@@ -8,10 +8,12 @@ class Nature_CNN(nn.Module):
     Input shape: 4x84x84 (C,H,W)
     """
 
-    def __init__(self, n_actions, size='normal'):
+    def __init__(self, n_actions, size='normal',depth='normal'):
 
         Size = {'normal': 1, 'big': 2, 'super': 4, 'small': 0.5}
+        Depth = {'normal':0,'deep':1,'very deep':2}
         n = Size[size]
+        self.k = Depth[depth]
 
         super(Nature_CNN, self).__init__()
         self.conv1 = nn.Conv2d(4, int(32*n), kernel_size=8, stride=4)
@@ -20,6 +22,10 @@ class Nature_CNN(nn.Module):
         self.conv3 = nn.Conv2d(int(64*n), int(64*n),
                                kernel_size=3, stride=1)
         self.fc1 = nn.Linear(int(7*7*64*n), int(512*n))
+
+        for idx in range(self.k):
+            exec("self.fc_{} = nn.Linear(int(512*n),int(512*n))".format(idx))
+
         self.fc2 = nn.Linear(int(512*n), n_actions)
 
         self.init_weights()
@@ -44,6 +50,11 @@ class Nature_CNN(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
         x = F.relu(x)
+
+        for idx in range(self.k):
+            exec("x = self.fc_{}(x)".format(idx))
+            x = F.relu(x)
+        
         x = self.fc2(x)
         return x
 
